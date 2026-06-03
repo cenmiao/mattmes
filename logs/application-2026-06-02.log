@@ -1,0 +1,54 @@
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-02 19:51:33.524"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-02 19:51:33.527"}
+{"args":{"database":"mattmes","host":"localhost","password":"123456","port":3306,"type":"mysql","username":"root"},"level":"info","message":"Tool call: connect","timestamp":"2026-06-02 20:05:57.043"}
+{"level":"info","message":"Connected to mysql database: mattmes","timestamp":"2026-06-02 20:05:57.185"}
+{"level":"info","message":"Connection expired due to idle timeout: conn-1780401957044-uq2smaorw","timestamp":"2026-06-02 20:15:57.366"}
+{"level":"info","message":"Disconnected from database: conn-1780401957044-uq2smaorw","timestamp":"2026-06-02 20:15:57.369"}
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-02 20:16:41.642"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-02 20:16:41.645"}
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-02 20:19:49.937"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-02 20:19:49.939"}
+{"args":{"database":"mattmes","host":"localhost","password":"123456","port":3306,"type":"mysql","username":"root"},"level":"info","message":"Tool call: connect","timestamp":"2026-06-02 20:30:43.429"}
+{"level":"info","message":"Connected to mysql database: mattmes","timestamp":"2026-06-02 20:30:43.520"}
+{"args":{"table":"sys_permission"},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 20:30:48.247"}
+{"args":{"table":"sys_user_role"},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 20:33:42.162"}
+{"args":{"table":"sys_role_permission"},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 20:33:42.171"}
+{"args":{"table":"sys_user","where":{"user_no":"admin"}},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 20:33:49.819"}
+{"args":{"table":"sys_role"},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 20:33:49.828"}
+{"args":{"table":"sys_permission","values":{"permission_code":"user:read"},"where":{"permission_code":"user:view"}},"level":"info","message":"Tool call: update","timestamp":"2026-06-02 20:40:10.235"}
+{"args":{"table":"sys_permission","values":{"permission_code":"role:read"},"where":{"permission_code":"role:view"}},"level":"info","message":"Tool call: update","timestamp":"2026-06-02 20:40:10.257"}
+{"args":{"columns":["id","permission_name","permission_code","permission_type"],"table":"sys_permission"},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 20:40:22.584"}
+{"args":{},"level":"info","message":"Tool call: insert","timestamp":"2026-06-02 20:40:46.947"}
+{"args":{},"level":"info","message":"Tool call: insert","timestamp":"2026-06-02 20:40:46.953"}
+{"args":{"table":"sys_permission","values":{"created_by":"system","description":"禁用/启用用户","parent_id":1,"permission_code":"user:disable","permission_name":"用户禁用启用","permission_type":2,"sort_order":6}},"level":"info","message":"Tool call: insert","timestamp":"2026-06-02 20:40:46.966"}
+{"args":{},"level":"info","message":"Tool call: insert","timestamp":"2026-06-02 20:40:56.487"}
+{"args":{"table":"sys_permission","values":{"created_by":"system","description":"查看登录日志","parent_id":4,"permission_code":"login-log:read","permission_name":"登录日志查看","permission_type":2,"sort_order":1}},"level":"info","message":"Tool call: insert","timestamp":"2026-06-02 20:40:56.496"}
+{"args":{"sql":"INSERT INTO sys_permission (permission_name, permission_code, permission_type, parent_id, sort_order, description, created_by, updated_by) VALUES ('权限查看', 'permission:read', 2, 3, 1, '查看权限列表', 'system', 'system')"},"level":"info","message":"Tool call: execute_sql","timestamp":"2026-06-02 20:41:04.131"}
+{"args":{"columns":["id","permission_code"],"table":"sys_permission"},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 20:41:16.369"}
+{"level":"info","message":"Connection expired due to idle timeout: conn-1780403443430-p0cbvvlny","timestamp":"2026-06-02 20:51:43.839"}
+{"level":"info","message":"Disconnected from database: conn-1780403443430-p0cbvvlny","timestamp":"2026-06-02 20:51:43.844"}
+{"args":{"columns":["user_id","role_id"],"table":"sys_user_role","where":{"user_id":1}},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 20:59:02.619"}
+{"level":"info","message":"autoConnect called - checking config","timestamp":"2026-06-02 20:59:02.619"}
+{"level":"info","message":"autoConnect - reading environment variables","timestamp":"2026-06-02 20:59:02.620"}
+{"level":"info","message":"autoConnect - connection params: host=localhost, port=3306, database=cmdb01, type=mysql","timestamp":"2026-06-02 20:59:02.620"}
+{"level":"info","message":"Auto-connecting to mysql database at localhost:3306/cmdb01","timestamp":"2026-06-02 20:59:02.620"}
+{"level":"info","message":"Connected to mysql database: cmdb01","timestamp":"2026-06-02 20:59:02.629"}
+{"level":"info","message":"autoConnect success - connectionId: conn-1780405142620-qmplx2s96","timestamp":"2026-06-02 20:59:02.629"}
+{"level":"info","message":"Connection expired due to idle timeout: conn-1780405142620-qmplx2s96","timestamp":"2026-06-02 21:09:02.765"}
+{"level":"info","message":"Disconnected from database: conn-1780405142620-qmplx2s96","timestamp":"2026-06-02 21:09:02.767"}
+{"args":{"columns":["user_no","name","email"],"table":"sys_user","where":{"user_no":"7189704"}},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 22:40:00.833"}
+{"level":"info","message":"autoConnect called - checking config","timestamp":"2026-06-02 22:40:00.835"}
+{"level":"info","message":"autoConnect - reading environment variables","timestamp":"2026-06-02 22:40:00.836"}
+{"level":"info","message":"autoConnect - connection params: host=localhost, port=3306, database=cmdb01, type=mysql","timestamp":"2026-06-02 22:40:00.836"}
+{"level":"info","message":"Auto-connecting to mysql database at localhost:3306/cmdb01","timestamp":"2026-06-02 22:40:00.836"}
+{"level":"info","message":"Connected to mysql database: cmdb01","timestamp":"2026-06-02 22:40:00.851"}
+{"level":"info","message":"autoConnect success - connectionId: conn-1780411200836-eo4hboy2l","timestamp":"2026-06-02 22:40:00.851"}
+{"args":{"database":"mattmes","host":"localhost","password":"123456","port":3306,"type":"mysql","username":"root"},"level":"info","message":"Tool call: connect","timestamp":"2026-06-02 22:40:15.042"}
+{"level":"info","message":"Connected to mysql database: mattmes","timestamp":"2026-06-02 22:40:15.052"}
+{"args":{"columns":["user_no","name","email"],"table":"sys_user","where":{"user_no":"7189704"}},"level":"info","message":"Tool call: select","timestamp":"2026-06-02 22:40:22.699"}
+{"args":{"sql":"SELECT user_no, name, email FROM sys_user WHERE user_no = '7189704'"},"level":"info","message":"Tool call: execute_sql","timestamp":"2026-06-02 22:40:28.911"}
+{"args":{"sql":"SELECT user_no, name, email FROM sys_user WHERE deleted = 0 ORDER BY id"},"level":"info","message":"Tool call: execute_sql","timestamp":"2026-06-02 22:40:43.012"}
+{"level":"info","message":"Connection expired due to idle timeout: conn-1780411200836-eo4hboy2l","timestamp":"2026-06-02 22:50:00.986"}
+{"level":"info","message":"Disconnected from database: conn-1780411200836-eo4hboy2l","timestamp":"2026-06-02 22:50:00.986"}
+{"level":"info","message":"Connection expired due to idle timeout: conn-1780411215043-6zzyysni8","timestamp":"2026-06-02 22:50:45.220"}
+{"level":"info","message":"Disconnected from database: conn-1780411215043-6zzyysni8","timestamp":"2026-06-02 22:50:45.225"}

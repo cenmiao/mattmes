@@ -1,0 +1,23 @@
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-03 19:19:36.785"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-03 19:19:36.787"}
+{"args":{"database":"mattmes","host":"localhost","password":"123456","port":3306,"type":"mysql","username":"root"},"level":"info","message":"Tool call: connect","timestamp":"2026-06-03 19:26:02.194"}
+{"level":"info","message":"Connected to mysql database: mattmes","timestamp":"2026-06-03 19:26:02.331"}
+{"args":{"table":"sys_user","where":{"user_no":"7189704"}},"level":"info","message":"Tool call: select","timestamp":"2026-06-03 19:26:12.109"}
+{"level":"info","message":"Connection expired due to idle timeout: conn-1780485962194-bp442zwmk","timestamp":"2026-06-03 19:36:32.465"}
+{"level":"info","message":"Disconnected from database: conn-1780485962194-bp442zwmk","timestamp":"2026-06-03 19:36:32.472"}
+{"args":{"database":"mattmes","host":"localhost","password":"123456","port":3306,"type":"mysql","username":"root"},"level":"info","message":"Tool call: connect","timestamp":"2026-06-03 19:46:05.999"}
+{"level":"info","message":"Connected to mysql database: mattmes","timestamp":"2026-06-03 19:46:06.009"}
+{"level":"info","message":"Connection expired due to idle timeout: conn-1780487165999-xptgn0bsn","timestamp":"2026-06-03 19:56:06.179"}
+{"level":"info","message":"Disconnected from database: conn-1780487165999-xptgn0bsn","timestamp":"2026-06-03 19:56:06.184"}
+{"args":{"database":"mattmes","host":"localhost","password":"123456","port":3306,"type":"mysql","username":"root"},"level":"info","message":"Tool call: connect","timestamp":"2026-06-03 20:06:01.281"}
+{"level":"info","message":"Connected to mysql database: mattmes","timestamp":"2026-06-03 20:06:01.291"}
+{"args":{"sql":"SELECT id, user_no, name, email, deleted FROM sys_user WHERE id >= 12 OR user_no = '7189704'"},"level":"info","message":"Tool call: execute_sql","timestamp":"2026-06-03 20:06:09.020"}
+{"args":{"sql":"SELECT id, user_no, name, email, deleted FROM sys_user ORDER BY id DESC LIMIT 5"},"level":"info","message":"Tool call: execute_sql","timestamp":"2026-06-03 20:06:17.854"}
+{"args":{"columns":["id","user_no","name","email","deleted"],"limit":10,"orderBy":[{"column":"id","direction":"DESC"}],"table":"sys_user"},"level":"info","message":"Tool call: select","timestamp":"2026-06-03 20:06:29.840"}
+{"args":{"table":"sys_user","where":{"id":12}},"level":"info","message":"Tool call: delete","timestamp":"2026-06-03 20:06:42.390"}
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-03 20:07:47.498"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-03 20:07:47.501"}
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-03 20:14:30.290"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-03 20:14:30.292"}
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-03 20:38:25.549"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-03 20:38:25.552"}

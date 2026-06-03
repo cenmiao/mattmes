@@ -1,0 +1,20 @@
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-01 21:03:10.669"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-01 21:03:10.671"}
+{"args":{"database":"mattmes","host":"localhost","password":"123456","port":3306,"type":"mysql","username":"root"},"level":"info","message":"Tool call: connect","timestamp":"2026-06-01 21:22:58.229"}
+{"level":"info","message":"Connected to mysql database: mattmes","timestamp":"2026-06-01 21:22:58.387"}
+{"args":{"columns":["user_no","password"],"table":"sys_user","where":{"user_no":"admin"}},"level":"info","message":"Tool call: select","timestamp":"2026-06-01 21:23:11.338"}
+{"args":{"columns":["user_no","login_error_count","lock_time","status"],"table":"sys_user","where":{"user_no":"admin"}},"level":"info","message":"Tool call: select","timestamp":"2026-06-01 21:23:51.361"}
+{"args":{"table":"sys_user","values":{"lock_time":null,"login_error_count":0},"where":{"user_no":"admin"}},"level":"info","message":"Tool call: update","timestamp":"2026-06-01 21:24:04.227"}
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-01 21:29:59.706"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-01 21:29:59.709"}
+{"level":"info","message":"Cleaning up expired connection: conn-1780320178229-ktgydo8wb","timestamp":"2026-06-01 21:34:10.896"}
+{"args":{"database":"mattmes","host":"localhost","password":"123456","port":3306,"type":"mysql","username":"root"},"level":"info","message":"Tool call: connect","timestamp":"2026-06-01 21:52:19.607"}
+{"level":"info","message":"Connected to mysql database: mattmes","timestamp":"2026-06-01 21:52:19.615"}
+{"args":{"table":"sys_user"},"level":"info","message":"Tool call: describe_table","timestamp":"2026-06-01 21:52:43.123"}
+{"args":{"sql":"DESCRIBE sys_user"},"level":"info","message":"Tool call: execute_sql","timestamp":"2026-06-01 21:53:06.408"}
+{"args":{"sql":"SHOW COLUMNS FROM sys_user"},"level":"info","message":"Tool call: execute_sql","timestamp":"2026-06-01 21:53:13.153"}
+{"args":{"sql":"SELECT COLUMN_NAME, DATA_TYPE, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'mattmes' AND TABLE_NAME = 'sys_user' ORDER BY ORDINAL_POSITION"},"level":"info","message":"Tool call: execute_sql","timestamp":"2026-06-01 21:53:24.005"}
+{"level":"info","message":"Connection expired due to idle timeout: conn-1780321939607-yezstzsnx","timestamp":"2026-06-01 22:03:49.793"}
+{"level":"info","message":"Disconnected from database: conn-1780321939607-yezstzsnx","timestamp":"2026-06-01 22:03:49.797"}
+{"level":"info","message":"MCP server started with stdio transport","timestamp":"2026-06-01 22:55:13.095"}
+{"level":"info","message":"Database MCP Server started with stdio transport","timestamp":"2026-06-01 22:55:13.113"}

@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__database-mcp-server__get_connection",
+      "mcp__database-mcp-server__connect",
+      "mcp__database-mcp-server__list_tables",
+      "mcp__database-mcp-server__execute_sql",
+      "mcp__database-mcp-server__list_databases",
+      "Bash(mvn test *)",
+      "Bash(mvn clean *)",
+      "Bash(mvn surefire:test -Dtest UserServiceTest)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(mysql -u root -proot -e \"SELECT 1\")",
+      "Bash(mvn spring-boot:run -Dspring-boot.run.fork=false)",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\Admin\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\D--Projects-MattSkillsDemoLocal\\\\\\\\f620033c-015f-40e2-84cb-37305da6845c\\\\\\\\tasks\\\\\\\\b1d2znosz.output\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr :8080)",
+      "Bash(findstr :5173)",
+      "Bash(taskkill *)",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\Admin\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\D--Projects-MattSkillsDemoLocal\\\\\\\\f620033c-015f-40e2-84cb-37305da6845c\\\\\\\\tasks\\\\\\\\bjmd8eb7r.output\")",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\Admin\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\D--Projects-MattSkillsDemoLocal\\\\\\\\f620033c-015f-40e2-84cb-37305da6845c\\\\\\\\tasks\\\\\\\\b5z0te1e2.output\")",
+      "Bash(tasklist)",
+      "Bash(wmic process *)",
+      "Bash(curl -s http://localhost:8080/actuator/health)"
+    ]
+  }
+}

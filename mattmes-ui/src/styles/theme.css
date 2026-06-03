@@ -1,0 +1,92 @@
+:root {
+  /* 主色 */
+  --primary-color: #0EA5E9;
+  --primary-light: #38BDF8;
+  --primary-dark: #0284C7;
+
+  /* 功能色 */
+  --success-color: #10B981;
+  --warning-color: #F59E0B;
+  --error-color: #F43F5E;
+  --data-highlight: #22D3EE;
+
+  /* 表面色(背景层级) */
+  --surface-l0: #0F172A;
+  --surface-l1: #1E293B;
+  --surface-l2: #334155;
+  --surface-l3: #475569;
+
+  /* 内容色 */
+  --content-c1: #F8FAFC;
+  --content-c2: #CBD5E1;
+  --content-c3: #94A3B8;
+  --content-c4: #64748B;
+
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* 字体 */
+  --font-brand: 'JetBrains Mono', 'SF Mono', monospace;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-data: 'IBM Plex Mono', monospace;
+}
+
+/* 全局样式 */
+body {
+  font-family: var(--font-body);
+  background-color: var(--surface-l0);
+  color: var(--content-c1);
+  margin: 0;
+  padding: 0;
+}
+
+/* 等宽字体样式 */
+.font-mono {
+  font-family: var(--font-data);
+}
+
+/* Element Plus 深色主题覆盖 */
+.el-button--primary {
+  --el-button-bg-color: var(--primary-color);
+  --el-button-border-color: var(--primary-color);
+  --el-button-hover-bg-color: var(--primary-light);
+  --el-button-hover-border-color: var(--primary-light);
+  --el-button-active-bg-color: var(--primary-dark);
+  --el-button-active-border-color: var(--primary-dark);
+}
+
+.el-card {
+  --el-card-bg-color: var(--surface-l1);
+  --el-card-border-color: var(--surface-l3);
+}
+
+.el-input__wrapper {
+  --el-input-bg-color: var(--surface-l2);
+  --el-input-border-color: var(--surface-l3);
+  --el-input-text-color: var(--content-c1);
+}
+
+.el-table {
+  --el-table-bg-color: var(--surface-l1);
+  --el-table-tr-bg-color: var(--surface-l1);
+  --el-table-header-bg-color: var(--surface-l2);
+  --el-table-row-hover-bg-color: var(--surface-l2);
+  --el-table-border-color: var(--surface-l3);
+  --el-table-text-color: var(--content-c1);
+}
+
+.el-dialog {
+  --el-dialog-bg-color: var(--surface-l1);
+  --el-dialog-title-font-size: 18px;
+}
