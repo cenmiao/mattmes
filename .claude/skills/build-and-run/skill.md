@@ -26,40 +26,64 @@ description: 编译并启动前后端项目。前端是 Vue+Vite 项目，后端
 
 在启动新服务前，检查前端和后端是否已在运行，如果运行中则先停止：
 
+**Windows系统 (在bash环境中)**：
+
 ```bash
-# 检查后端端口 8080 是否被占用 (Windows)
+# 检查后端端口 8080 是否被占用
 netstat -ano | findstr :8080
 
-# 如果有进程占用 8080，获取 PID 并终止 (Windows)
-for /f "tokens=5" %a in ('netstat -ano ^| findstr :8080') do taskkill /F /PID %a
+# 如果有进程占用 8080，使用 PID 终止进程
+# 注意: 在Windows bash环境中必须使用双斜杠 //
+taskkill //F //PID <PID>
 
-# 检查前端端口 3000 是否被占用 (Windows)
+# 检查前端端口 3000 是否被占用
 netstat -ano | findstr :3000
 
-# 如果有进程占用 3000，获取 PID 并终止 (Windows)
-for /f "tokens=5" %a in ('netstat -ano ^| findstr :3000') do taskkill /F /PID %a
+# 如果有进程占用 3000，使用 PID 终止进程
+taskkill //F //PID <PID>
 ```
 
-**注意**: 终止进程前确认是目标服务（Spring Boot 或 Vite dev server）。
+**Linux/Mac系统**：
+
+```bash
+# 检查并停止后端 (占用 8080 端口的进程)
+lsof -ti:8080 | xargs kill -9
+
+# 检查并停止前端 (占用 3000 端口的进程)
+lsof -ti:3000 | xargs kill -9
+```
+
+**注意**:
+- Windows bash环境中,taskkill命令必须使用 `//F` 和 `//PID` 格式
+- 终止进程前确认是目标服务（Spring Boot 或 Vite dev server）
 
 ### 2. 编译后端
 
-在 `mattmes` 目录执行 Maven 编译：
+在项目根目录执行 Maven 编译：
 
 ```bash
-cd mattmes
-mvn clean compile -DskipTests
+# 使用相对路径从项目根目录编译
+mvn -f mattmes/pom.xml clean compile -DskipTests
 ```
 
 编译失败时，检查错误日志并提示用户修复。
 
 ### 3. 编译前端
 
-在 `mattmes-ui` 目录执行 npm 构建：
+前端编译需要确保在正确目录执行，使用以下方式之一：
+
+**方式1: 使用子shell (推荐)**
 
 ```bash
-cd mattmes-ui
-npm run build
+# 子shell执行,不影响当前工作目录
+(cd mattmes-ui && npm run build)
+```
+
+**方式2: 指定工作目录**
+
+```bash
+# 使用绝对路径确保目录正确
+npm run build --prefix mattmes-ui
 ```
 
 此命令会先执行 TypeScript 类型检查 (`vue-tsc -b`)，然后执行 Vite 构建。
@@ -68,9 +92,18 @@ npm run build
 
 后端使用 Spring Boot Maven 插件启动，在后台运行：
 
+**重要**: 必须确保工作目录正确,推荐使用绝对路径:
+
 ```bash
-cd mattmes/mattmes-web
-mvn spring-boot:run -Dspring-boot.run.fork=false
+# 使用绝对路径启动后端 (推荐)
+mvn -f D:/Projects/MattSkillsDemoLocal/mattmes/mattmes-web/pom.xml spring-boot:run -Dspring-boot.run.fork=false
+```
+
+或者在项目根目录使用相对路径:
+
+```bash
+# 从项目根目录使用相对路径启动
+mvn -f mattmes/mattmes-web/pom.xml spring-boot:run -Dspring-boot.run.fork=false
 ```
 
 **配置说明**：
@@ -84,9 +117,27 @@ mvn spring-boot:run -Dspring-boot.run.fork=false
 
 前端使用 Vite 开发服务器，在前台运行：
 
+**重要**: 确保在正确目录启动前端:
+
+**方式1: 使用子shell (推荐)**
+
 ```bash
-cd mattmes-ui
-npm run dev
+# 子shell执行,不影响后续命令的工作目录
+(cd mattmes-ui && npm run dev)
+```
+
+**方式2: 在后台运行**
+
+```bash
+# 切换到前端目录启动
+cd mattmes-ui && npm run dev
+```
+
+**方式3: 使用npm --prefix参数**
+
+```bash
+# 不切换目录,使用--prefix指定路径
+npm run dev --prefix mattmes-ui
 ```
 
 **默认配置**：
@@ -124,14 +175,20 @@ npm run dev
 
 ## 停止服务
 
-### Windows 系统
+### Windows 系统 (在bash环境中)
+
+**重要**: 在Windows bash环境中必须使用双斜杠 `//` 格式:
 
 ```bash
-# 停止后端 (占用 8080 端口的进程)
-for /f "tokens=5" %a in ('netstat -ano ^| findstr :8080') do taskkill /F /PID %a
+# 检查并停止后端 (占用 8080 端口的进程)
+netstat -ano | findstr :8080
+# 使用找到的 PID 终止进程
+taskkill //F //PID <PID>
 
-# 停止前端 (占用 3000 端口的进程)
-for /f "tokens=5" %a in ('netstat -ano ^| findstr :3000') do taskkill /F /PID %a
+# 检查并停止前端 (占用 3000 端口的进程)
+netstat -ano | findstr :3000
+# 使用找到的 PID 终止进程
+taskkill //F //PID <PID>
 ```
 
 ### Linux/Mac 系统

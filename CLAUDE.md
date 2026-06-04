@@ -1,20 +1,27 @@
 # CLAUDE.md
 
-本仓库的 Claude Code 配置文件。
 
 ## 项目概述
 
 Matt MES管理系统 - 离散制造执行系统,采用前后端分离架构:
-- **后端**: Spring Boot 3.3 + MyBatis-Plus + MySQL,位于 `mattmes/` 目录
-- **前端**: Vue 3 + TypeScript + Vite + Element Plus,位于 `mattmes-ui/` 目录
+
+- **后端**: Spring Boot 3.3 + MyBatis-Plus + MySQL,位于 `.mattmes/` 目录
+- **前端**: Vue 3 + TypeScript + Vite + Element Plus,位于 `.mattmes-ui/` 目录
 
 ## 项目常用
 
-### 运行
-使用build-and-run 技能进行前后端运行
+### 开发
+- 当用户使用tdd技能开始实施时，需要先进行tdd开发流程的评估，给用户一个评估总结，包括哪些可以tdd开发，哪些不可以tdd开发，获得用户的许可后才能开始。
+- 开始tdd开发后，必须严格执行RED-GREEN-REFACTOR的流程，按照如下流程执行：
+    - 1: 编写失败测试
+    - 2：运行失败测试
+    - 3：重构业务代码
+    - 4：运行成功测试
+- 绝对不可以：
+    - 1：跳过任何步骤
+    - 2：直接修改测试使测试通过
+- 开发完成后需要编译对应的项目，确保项目可以成功编译
 
-- 后端地址：http://localhost:8080
-- 前端地址：http://localhost:3000
 
 ### 数据库
 - url: jdbc:mysql://localhost:3306/
@@ -25,6 +32,7 @@ Matt MES管理系统 - 离散制造执行系统,采用前后端分离架构:
 数据库相关操作使用database-mcp-server MCP
 
 ### 运行
+- 后端地址：http://localhost:8080
 - 项目前端登录地址：http://localhost:3000
 - 账户: admin
 - 密码: Admin@123
