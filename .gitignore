@@ -20,7 +20,6 @@ Thumbs.db
 # Playwright CLI
 .playwright-cli/
 
-# Agent
-.claude/
-.scratch/
-docs/
+# Agent worktrees (keep config)
+.claude/worktrees/
+.claude/sessions/

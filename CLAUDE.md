@@ -1,12 +1,12 @@
 # CLAUDE.md
 
-本仓库的 Claude Code 配置文件。
 
 ## 项目概述
 
 Matt MES管理系统 - 离散制造执行系统,采用前后端分离架构:
-- **后端**: Spring Boot 3.3 + MyBatis-Plus + MySQL,位于 `mattmes/` 目录
-- **前端**: Vue 3 + TypeScript + Vite + Element Plus,位于 `mattmes-ui/` 目录
+
+- **后端**: Spring Boot 3.3 + MyBatis-Plus + MySQL,位于 `.mattmes/` 目录
+- **前端**: Vue 3 + TypeScript + Vite + Element Plus,位于 `.mattmes-ui/` 目录
 
 ## 项目常用
 
@@ -20,6 +20,7 @@ Matt MES管理系统 - 离散制造执行系统,采用前后端分离架构:
 - 绝对不可以：
     - 1：跳过任何步骤
     - 2：直接修改测试使测试通过
+- 开发完成后需要编译对应的项目，确保项目可以成功编译
 
 
 ### 数据库
