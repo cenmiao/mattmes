@@ -46,4 +46,13 @@ public class ProcessController {
         Long id = processService.edit(request);
         return Result.success("编辑工序成功", id);
     }
+
+    /**
+     * 更新工序启用状态
+     */
+    @PutMapping("/status/{id}")
+    public Result<Long> updateStatus(@PathVariable Long id, @RequestParam Integer enable) {
+        Long processId = processService.updateStatus(id, enable);
+        return Result.success("状态更新成功", processId);
+    }
 }

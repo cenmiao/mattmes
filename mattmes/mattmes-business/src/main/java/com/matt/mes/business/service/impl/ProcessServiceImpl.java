@@ -164,6 +164,26 @@ public class ProcessServiceImpl implements ProcessService {
         return process.getId();
     }
 
+    @Override
+    public Long updateStatus(Long id, Integer enable) {
+        // 1. 校验工序是否存在
+        MesProcess process = processMapper.selectById(id);
+        if (process == null) {
+            throw new BusinessException(400, "工序不存在");
+        }
+
+        // 2. 校验状态值有效性
+        if (enable == null || (enable != 0 && enable != 1)) {
+            throw new BusinessException(400, "启用状态值无效");
+        }
+
+        // 3. 更新状态
+        process.setEnable(enable);
+        processMapper.updateById(process);
+
+        return process.getId();
+    }
+
     /**
      * 转换为响应DTO
      */

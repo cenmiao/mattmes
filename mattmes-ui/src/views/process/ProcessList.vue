@@ -86,9 +86,13 @@
         <el-table-column prop="description" label="工序描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="enable" label="启用状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.enable === 1 ? 'success' : 'danger'">
-              {{ row.enable === 1 ? '启用' : '禁用' }}
-            </el-tag>
+            <el-switch
+              v-model="row.enable"
+              :active-value="1"
+              :inactive-value="0"
+              @change="handleStatusChange(row)"
+              v-permission="'process:edit'"
+            />
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
@@ -262,7 +266,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { queryProcessList, addProcess, editProcess, type ProcessQueryRequest, type ProcessResponse, type ProcessAddRequest, type ProcessEditRequest } from '@/api/process'
+import { queryProcessList, addProcess, editProcess, updateProcessStatus, type ProcessQueryRequest, type ProcessResponse, type ProcessAddRequest, type ProcessEditRequest } from '@/api/process'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -464,6 +468,18 @@ const getProcessTypeLabel = (type: string) => {
       return '包装'
     default:
       return '其他'
+  }
+}
+
+// 状态切换
+const handleStatusChange = async (row: ProcessResponse) => {
+  try {
+    await updateProcessStatus(row.id, row.enable)
+    ElMessage.success('状态更新成功')
+  } catch (error: any) {
+    // 更新失败时恢复原状态
+    row.enable = row.enable === 1 ? 0 : 1
+    ElMessage.error(error.message || '状态更新失败')
   }
 }
 

@@ -25,4 +25,12 @@ public interface ProcessService {
      * 编辑工序
      */
     Long edit(ProcessEditRequest request);
+
+    /**
+     * 更新工序启用状态
+     * @param id 工序ID
+     * @param enable 启用状态：1=启用，0=禁用
+     * @return 工序ID
+     */
+    Long updateStatus(Long id, Integer enable);
 }

@@ -95,3 +95,14 @@ export function editProcess(data: ProcessEditRequest) {
     data
   })
 }
+
+/**
+ * 更新工序启用状态
+ */
+export function updateProcessStatus(id: number, enable: number) {
+  return request<{ id: number }>({
+    url: `/process/status/${id}`,
+    method: 'put',
+    params: { enable }
+  })
+}
