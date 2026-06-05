@@ -1,7 +1,8 @@
 ---
 name: process-add-feature
 description: 实现工序新增功能
-labels: [ready-for-agent]
+labels: [done]
+completed: 2026-06-05
 ---
 
 ## Parent
@@ -35,13 +36,50 @@ labels: [ready-for-agent]
 
 ## Acceptance criteria
 
-- [ ] 后端新增接口编译通过
-- [ ] 编码重复时返回明确的错误提示
-- [ ] 必填项校验正常工作
-- [ ] 前端新增按钮根据权限显示/隐藏
-- [ ] 前端表单验证正常工作
-- [ ] 新增成功后列表自动刷新
+- [x] 后端新增接口编译通过
+- [x] 编码重复时返回明确的错误提示
+- [x] 必填项校验正常工作
+- [x] 前端新增按钮根据权限显示/隐藏
+- [x] 前端表单验证正常工作
+- [x] 新增成功后列表自动刷新
 
 ## Blocked by
 
 - 02-query-feature (需要查询页面作为基础)
+
+---
+
+## Completion Notes
+
+**2026-06-05 完成记录:**
+
+- 状态: `ready-for-agent` → `done`
+- 实现方式: 严格遵循TDD RED-GREEN-REFACTOR流程完成工序新增功能
+
+**创建/修改的文件:**
+
+**后端:**
+1. `mattmes/mattmes-business/src/main/java/com/matt/mes/business/dto/ProcessAddRequest.java` - 新增请求DTO
+2. `mattmes/mattmes-business/src/main/java/com/matt/mes/business/service/ProcessService.java` - 添加add方法接口
+3. `mattmes/mattmes-business/src/main/java/com/matt/mes/business/service/impl/ProcessServiceImpl.java` - 实现新增逻辑（编码唯一性校验、必填项校验、字段长度校验、编码格式校验）
+4. `mattmes/mattmes-web/src/main/java/com/matt/mes/controller/ProcessController.java` - 添加add接口
+
+**前端:**
+1. `mattmes-ui/src/api/process.ts` - 添加ProcessAddRequest类型和addProcess函数
+2. `mattmes-ui/src/views/process/ProcessList.vue` - 实现新增按钮、弹窗、表单验证和提交
+
+**测试:**
+1. `mattmes/mattmes-business/src/test/java/com/matt/mes/business/service/ProcessServiceTest.java` - 添加编码唯一性、必填项、字段长度校验测试
+2. `mattmes/mattmes-web/src/test/java/com/matt/mes/controller/ProcessControllerTest.java` - 添加Controller新增接口测试
+3. `mattmes-ui/src/api/__tests__/process.spec.ts` - 添加前端API测试
+
+**TDD开发流程:**
+- RED阶段: 编写失败测试，验证测试确实失败
+- GREEN阶段: 实现最小代码使测试通过
+- 遵循垂直切片原则，一次只实现一个行为
+
+**验证结果:**
+- ✅ 后端编译通过
+- ✅ 前端编译通过
+- ✅ 所有单元测试通过
+- ✅ 所有验收标准达成

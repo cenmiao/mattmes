@@ -1,11 +1,13 @@
 package com.matt.mes.business.service;
 
 import com.matt.mes.business.config.TestConfig;
+import com.matt.mes.business.dto.ProcessAddRequest;
 import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
 import com.matt.mes.business.entity.MesProcess;
 import com.matt.mes.business.mapper.ProcessMapper;
+import com.matt.mes.common.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -206,5 +208,122 @@ class ProcessServiceTest {
         process.setProcessType(processType);
         process.setEnable(enable);
         processMapper.insert(process);
+    }
+
+    // ========== 新增工序测试 ==========
+
+    @Test
+    @DisplayName("编码重复时新增工序应抛出业务异常")
+    void shouldThrowWhenCodeDuplicate() {
+        // 准备:先插入一条编码为DUP-001的工序（使用不与setUp冲突的编码）
+        insertTestProcess("DUP-001", "测试工序", "ASSEMBLY", 1);
+
+        // 构建新增请求:使用相同编码
+        ProcessAddRequest request = new ProcessAddRequest();
+        request.setCode("DUP-001");
+        request.setName("新组装工序");
+        request.setProcessType("ASSEMBLY");
+
+        // 验证:应抛出BusinessException
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            processService.add(request);
+        });
+        assertTrue(exception.getMessage().contains("编码已存在"));
+    }
+
+    @Test
+    @DisplayName("编码为空时新增工序应抛出业务异常")
+    void shouldThrowWhenCodeEmpty() {
+        // 构建新增请求:编码为空
+        ProcessAddRequest request = new ProcessAddRequest();
+        request.setCode(null);
+        request.setName("测试工序");
+        request.setProcessType("ASSEMBLY");
+
+        // 验证:应抛出BusinessException
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            processService.add(request);
+        });
+        assertTrue(exception.getMessage().contains("编码不能为空"));
+    }
+
+    @Test
+    @DisplayName("名称为空时新增工序应抛出业务异常")
+    void shouldThrowWhenNameEmpty() {
+        // 构建新增请求:名称为空
+        ProcessAddRequest request = new ProcessAddRequest();
+        request.setCode("NEW-001");
+        request.setName(null);
+        request.setProcessType("ASSEMBLY");
+
+        // 验证:应抛出BusinessException
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            processService.add(request);
+        });
+        assertTrue(exception.getMessage().contains("名称不能为空"));
+    }
+
+    @Test
+    @DisplayName("工序类型为空时新增工序应抛出业务异常")
+    void shouldThrowWhenProcessTypeEmpty() {
+        // 构建新增请求:工序类型为空
+        ProcessAddRequest request = new ProcessAddRequest();
+        request.setCode("NEW-001");
+        request.setName("测试工序");
+        request.setProcessType(null);
+
+        // 验证:应抛出BusinessException
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            processService.add(request);
+        });
+        assertTrue(exception.getMessage().contains("工序类型不能为空"));
+    }
+
+    @Test
+    @DisplayName("编码超过50字符时新增工序应抛出业务异常")
+    void shouldThrowWhenCodeTooLong() {
+        // 构建新增请求:编码超过50字符
+        ProcessAddRequest request = new ProcessAddRequest();
+        request.setCode("A".repeat(51));  // 51个字符
+        request.setName("测试工序");
+        request.setProcessType("ASSEMBLY");
+
+        // 验证:应抛出BusinessException
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            processService.add(request);
+        });
+        assertTrue(exception.getMessage().contains("编码长度不能超过50个字符"));
+    }
+
+    @Test
+    @DisplayName("名称超过100字符时新增工序应抛出业务异常")
+    void shouldThrowWhenNameTooLong() {
+        // 构建新增请求:名称超过100字符
+        ProcessAddRequest request = new ProcessAddRequest();
+        request.setCode("NEW-001");
+        request.setName("A".repeat(101));  // 101个字符
+        request.setProcessType("ASSEMBLY");
+
+        // 验证:应抛出BusinessException
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            processService.add(request);
+        });
+        assertTrue(exception.getMessage().contains("名称长度不能超过100个字符"));
+    }
+
+    @Test
+    @DisplayName("编码格式不正确时新增工序应抛出业务异常")
+    void shouldThrowWhenCodeFormatInvalid() {
+        // 构建新增请求:编码包含非法字符（仅允许字母、数字、下划线、中划线）
+        ProcessAddRequest request = new ProcessAddRequest();
+        request.setCode("CODE@001");  // 包含@
+        request.setName("测试工序");
+        request.setProcessType("ASSEMBLY");
+
+        // 验证:应抛出BusinessException
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            processService.add(request);
+        });
+        assertTrue(exception.getMessage().contains("编码只能包含字母、数字、下划线和中划线"));
     }
 }

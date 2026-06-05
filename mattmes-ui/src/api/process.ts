@@ -40,6 +40,18 @@ export interface ProcessPageResult {
 }
 
 /**
+ * 工序新增请求参数
+ */
+export interface ProcessAddRequest {
+  code: string
+  name: string
+  processType: string
+  description?: string
+  enable?: number
+  remark?: string
+}
+
+/**
  * 查询工序列表
  */
 export function queryProcessList(params: ProcessQueryRequest) {
@@ -47,5 +59,16 @@ export function queryProcessList(params: ProcessQueryRequest) {
     url: '/process/list',
     method: 'post',
     data: params
+  })
+}
+
+/**
+ * 新增工序
+ */
+export function addProcess(data: ProcessAddRequest) {
+  return request<{ id: number }>({
+    url: '/process/add',
+    method: 'post',
+    data
   })
 }

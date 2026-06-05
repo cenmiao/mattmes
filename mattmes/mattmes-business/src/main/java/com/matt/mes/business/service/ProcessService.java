@@ -1,5 +1,6 @@
 package com.matt.mes.business.service;
 
+import com.matt.mes.business.dto.ProcessAddRequest;
 import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
@@ -13,4 +14,9 @@ public interface ProcessService {
      * 查询工序列表
      */
     ProcessPageResult<ProcessResponse> queryList(ProcessQueryRequest request);
+
+    /**
+     * 新增工序
+     */
+    Long add(ProcessAddRequest request);
 }

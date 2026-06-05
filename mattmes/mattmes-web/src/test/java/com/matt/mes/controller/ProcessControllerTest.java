@@ -1,6 +1,7 @@
 package com.matt.mes.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.matt.mes.business.dto.ProcessAddRequest;
 import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
@@ -38,6 +39,9 @@ class ProcessControllerTest {
 
     @Autowired
     private ProcessMapper processMapper;
+
+    // 永久测试token
+    private static final String TEST_TOKEN = "eyJhbGciOiJIUzM4NCJ9.eyJ1c2VyTm8iOiJhZG1pbiIsInVzZXJJZCI6MSwiaWF0IjoxNzgwNDg2OTEyLCJleHAiOjE4MTIwMjI5MTJ9.be7sM94QmpqKrkr3iYWMRkROzaKyb-LGZNF3SW93VPzSzjEEjJy06zbOCeOjsTGK";
 
     @BeforeEach
     void setUp() {
@@ -120,5 +124,47 @@ class ProcessControllerTest {
         process.setProcessType(processType);
         process.setEnable(enable);
         processMapper.insert(process);
+    }
+
+    // ========== 新增工序接口测试 ==========
+
+    @Test
+    @DisplayName("POST /api/process/add 接口新增工序成功")
+    void shouldAddProcessSuccessfully() throws Exception {
+        // 构建新增请求
+        ProcessAddRequest request = new ProcessAddRequest();
+        request.setCode("NEW-001");
+        request.setName("新工序");
+        request.setProcessType("ASSEMBLY");
+
+        // 验证响应
+        mockMvc.perform(post("/api/process/add")
+                        .header("Authorization", "Bearer " + TEST_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").exists());
+    }
+
+    @Test
+    @DisplayName("编码重复时返回400错误")
+    void shouldReturn400WhenCodeDuplicate() throws Exception {
+        // 准备:已存在的工序
+        insertTestProcess("DUP-002", "已存在工序", "ASSEMBLY", 1);
+
+        // 构建新增请求:使用重复编码
+        ProcessAddRequest request = new ProcessAddRequest();
+        request.setCode("DUP-002");
+        request.setName("新工序");
+        request.setProcessType("ASSEMBLY");
+
+        // 验证返回400错误
+        mockMvc.perform(post("/api/process/add")
+                        .header("Authorization", "Bearer " + TEST_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("工序编码已存在"));
     }
 }

@@ -1,5 +1,6 @@
 package com.matt.mes.controller;
 
+import com.matt.mes.business.dto.ProcessAddRequest;
 import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
@@ -25,5 +26,14 @@ public class ProcessController {
     public Result<ProcessPageResult<ProcessResponse>> list(@RequestBody ProcessQueryRequest request) {
         ProcessPageResult<ProcessResponse> result = processService.queryList(request);
         return Result.success(result);
+    }
+
+    /**
+     * 新增工序
+     */
+    @PostMapping("/add")
+    public Result<Long> add(@RequestBody ProcessAddRequest request) {
+        Long id = processService.add(request);
+        return Result.success("新增工序成功", id);
     }
 }
