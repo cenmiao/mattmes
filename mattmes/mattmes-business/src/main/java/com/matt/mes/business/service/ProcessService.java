@@ -6,6 +6,7 @@ import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -49,4 +50,11 @@ public interface ProcessService {
      * @return 被删除的工序ID列表
      */
     List<Long> batchDelete(List<Long> ids);
+
+    /**
+     * 导出工序数据为CSV
+     * @param request 查询条件
+     * @param response HTTP响应
+     */
+    void export(ProcessQueryRequest request, HttpServletResponse response);
 }

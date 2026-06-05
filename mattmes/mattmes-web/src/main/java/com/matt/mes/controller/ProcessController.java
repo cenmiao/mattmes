@@ -7,6 +7,7 @@ import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
 import com.matt.mes.business.service.ProcessService;
 import com.matt.mes.common.result.Result;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -74,5 +75,13 @@ public class ProcessController {
     public Result<List<Long>> batchDelete(@RequestBody List<Long> ids) {
         List<Long> deletedIds = processService.batchDelete(ids);
         return Result.success("批量删除工序成功", deletedIds);
+    }
+
+    /**
+     * 导出工序数据
+     */
+    @GetMapping("/export")
+    public void export(ProcessQueryRequest request, HttpServletResponse response) {
+        processService.export(request, response);
     }
 }

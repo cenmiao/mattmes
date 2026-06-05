@@ -12,9 +12,15 @@ import com.matt.mes.business.enums.ProcessType;
 import com.matt.mes.business.mapper.ProcessMapper;
 import com.matt.mes.business.service.ProcessService;
 import com.matt.mes.common.exception.BusinessException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -243,5 +249,96 @@ public class ProcessServiceImpl implements ProcessService {
                 .updatedBy(process.getUpdatedBy())
                 .updateTime(process.getUpdateTime())
                 .build();
+    }
+
+    @Override
+    public void export(ProcessQueryRequest request, HttpServletResponse response) {
+        try {
+            // 1. 构建查询条件（复用 queryList 的查询逻辑）
+            LambdaQueryWrapper<MesProcess> queryWrapper = buildQueryWrapper(request);
+            queryWrapper.orderByDesc(MesProcess::getId);
+
+            // 2. 查询所有符合条件的数据（不分页）
+            List<MesProcess> processList = processMapper.selectList(queryWrapper);
+
+            // 3. 设置响应头
+            String fileName = generateExportFileName();
+            response.setContentType("text/csv;charset=UTF-8");
+            response.setHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(fileName, StandardCharsets.UTF_8));
+
+            // 4. 写入CSV内容
+            StringBuilder csv = new StringBuilder();
+            // 写入表头
+            csv.append("ID,工序编码,工序名称,工序类型,工序描述,启用状态,备注,创建人,创建时间\n");
+
+            // 写入数据行
+            for (MesProcess process : processList) {
+                csv.append(process.getId()).append(",");
+                csv.append(escapeCsvField(process.getCode())).append(",");
+                csv.append(escapeCsvField(process.getName())).append(",");
+                csv.append(escapeCsvField(process.getProcessType())).append(",");
+                csv.append(escapeCsvField(process.getDescription())).append(",");
+                csv.append(process.getEnable()).append(",");
+                csv.append(escapeCsvField(process.getRemark())).append(",");
+                csv.append(escapeCsvField(process.getCreatedBy())).append(",");
+                csv.append(process.getCreateTime() != null ? process.getCreateTime().toString() : "");
+                csv.append("\n");
+            }
+
+            response.getWriter().write(csv.toString());
+        } catch (IOException e) {
+            throw new BusinessException(500, "导出文件失败");
+        }
+    }
+
+    /**
+     * 构建查询条件
+     */
+    private LambdaQueryWrapper<MesProcess> buildQueryWrapper(ProcessQueryRequest request) {
+        LambdaQueryWrapper<MesProcess> queryWrapper = new LambdaQueryWrapper<>();
+
+        // 编码模糊查询
+        if (request.getCode() != null && !request.getCode().isEmpty()) {
+            queryWrapper.like(MesProcess::getCode, request.getCode());
+        }
+
+        // 名称模糊查询
+        if (request.getName() != null && !request.getName().isEmpty()) {
+            queryWrapper.like(MesProcess::getName, request.getName());
+        }
+
+        // 工序类型精确查询
+        if (request.getProcessType() != null && !request.getProcessType().isEmpty()) {
+            queryWrapper.eq(MesProcess::getProcessType, request.getProcessType());
+        }
+
+        // 启用状态精确查询
+        if (request.getEnable() != null) {
+            queryWrapper.eq(MesProcess::getEnable, request.getEnable());
+        }
+
+        return queryWrapper;
+    }
+
+    /**
+     * 生成导出文件名
+     */
+    private String generateExportFileName() {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        return "工序数据_" + timestamp + ".csv";
+    }
+
+    /**
+     * 转义CSV字段（处理逗号、引号、换行符）
+     */
+    private String escapeCsvField(String field) {
+        if (field == null) {
+            return "";
+        }
+        // 如果字段包含逗号、引号或换行符，需要用引号包裹并转义内部引号
+        if (field.contains(",") || field.contains("\"") || field.contains("\n")) {
+            return "\"" + field.replace("\"", "\"\"") + "\"";
+        }
+        return field;
     }
 }

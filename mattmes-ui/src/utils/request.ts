@@ -24,6 +24,10 @@ service.interceptors.request.use(
 
 service.interceptors.response.use(
   (response: AxiosResponse) => {
+    // 如果是 blob 类型响应（文件下载），直接返回 data
+    if (response.config.responseType === 'blob') {
+      return response.data
+    }
     const { code, message, data } = response.data
     if (code === 200) {
       return data

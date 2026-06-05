@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -310,5 +311,43 @@ class ProcessControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("工序不存在"));
+    }
+
+    // ========== 导出工序接口测试 ==========
+
+    @Test
+    @DisplayName("GET /api/process/export 接口可访问")
+    void shouldAccessExportEndpoint() throws Exception {
+        mockMvc.perform(get("/api/process/export")
+                        .header("Authorization", "Bearer " + TEST_TOKEN))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("导出接口返回正确的Content-Type")
+    void shouldReturnCorrectContentType() throws Exception {
+        mockMvc.perform(get("/api/process/export")
+                        .header("Authorization", "Bearer " + TEST_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "text/csv;charset=UTF-8"));
+    }
+
+    @Test
+    @DisplayName("导出接口返回正确的文件名格式")
+    void shouldReturnCorrectFileNameFormat() throws Exception {
+        mockMvc.perform(get("/api/process/export")
+                        .header("Authorization", "Bearer " + TEST_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("Content-Disposition"))
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString(".csv")));
+    }
+
+    @Test
+    @DisplayName("导出接口返回CSV内容包含表头")
+    void shouldReturnCsvWithHeader() throws Exception {
+        mockMvc.perform(get("/api/process/export")
+                        .header("Authorization", "Bearer " + TEST_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("工序编码")));
     }
 }

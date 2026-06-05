@@ -17,6 +17,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -564,5 +567,82 @@ class ProcessServiceTest {
             processService.batchDelete(ids);
         });
         assertTrue(exception.getMessage().contains("工序不存在"));
+    }
+
+    // ========== 导出工序测试 ==========
+
+    @Test
+    @DisplayName("导出无数据时返回仅包含表头的CSV")
+    void shouldReturnCsvWithOnlyHeaderWhenNoData() throws Exception {
+        // 准备:清空所有测试数据，确保没有匹配的数据
+        // 使用一个不存在的编码查询
+        ProcessQueryRequest request = new ProcessQueryRequest();
+        request.setCode("NONEXISTENT_CODE_XYZ");
+
+        // 模拟 HttpServletResponse
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+
+        HttpServletResponse mockResponse = org.mockito.Mockito.mock(HttpServletResponse.class);
+        org.mockito.Mockito.when(mockResponse.getWriter()).thenReturn(printWriter);
+
+        // 执行导出
+        processService.export(request, mockResponse);
+
+        // 验证输出内容
+        String csvContent = stringWriter.toString();
+        assertNotNull(csvContent);
+
+        // 验证CSV表头
+        String[] lines = csvContent.split("\n");
+        assertEquals(1, lines.length); // 只有表头一行
+        assertTrue(lines[0].contains("ID"));
+        assertTrue(lines[0].contains("工序编码"));
+        assertTrue(lines[0].contains("工序名称"));
+        assertTrue(lines[0].contains("工序类型"));
+        assertTrue(lines[0].contains("启用状态"));
+    }
+
+    @Test
+    @DisplayName("导出数据符合查询条件")
+    void shouldExportDataMatchingQueryConditions() throws Exception {
+        // 模拟 HttpServletResponse
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+
+        HttpServletResponse mockResponse = org.mockito.Mockito.mock(HttpServletResponse.class);
+        org.mockito.Mockito.when(mockResponse.getWriter()).thenReturn(printWriter);
+
+        // 构建查询条件：查询编码包含ASM且状态为启用的工序
+        ProcessQueryRequest request = new ProcessQueryRequest();
+        request.setCode("ASM");
+        request.setEnable(1);
+
+        // 执行导出
+        processService.export(request, mockResponse);
+
+        // 验证输出内容
+        String csvContent = stringWriter.toString();
+        assertNotNull(csvContent);
+
+        // 验证CSV内容
+        String[] lines = csvContent.split("\n");
+        assertTrue(lines.length >= 2); // 有表头和数据行
+
+        // 验证表头
+        assertTrue(lines[0].contains("工序编码"));
+
+        // 验证数据行符合条件（ASM-001和ASM-002，状态为1）
+        // setUp中插入的数据：ASM-001（启用）、ASM-002（启用）、ASM-003（禁用）
+        // 查询条件：编码包含ASM + 状态=1，应该只导出ASM-001和ASM-002
+        int dataRowCount = lines.length - 1; // 减去表头
+        assertEquals(2, dataRowCount);
+
+        // 验证所有数据行的编码包含ASM
+        for (int i = 1; i < lines.length; i++) {
+            assertTrue(lines[i].contains("ASM"));
+            // 验证状态为1（CSV中启用状态字段值为1）
+            assertTrue(lines[i].split(",")[5].equals("1")); // 第6列是启用状态
+        }
     }
 }

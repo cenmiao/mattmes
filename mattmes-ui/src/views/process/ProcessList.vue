@@ -69,6 +69,10 @@
             <el-icon><Delete /></el-icon>
             批量删除
           </el-button>
+          <el-button type="warning" @click="handleExport" v-permission="'process:export'">
+            <el-icon><Download /></el-icon>
+            导出
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -280,8 +284,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { queryProcessList, addProcess, editProcess, updateProcessStatus, deleteProcess, batchDeleteProcesses, type ProcessQueryRequest, type ProcessResponse, type ProcessAddRequest, type ProcessEditRequest } from '@/api/process'
-import { Search, Refresh, Plus, Delete } from '@element-plus/icons-vue'
+import { queryProcessList, addProcess, editProcess, updateProcessStatus, deleteProcess, batchDeleteProcesses, exportProcess, type ProcessQueryRequest, type ProcessResponse, type ProcessAddRequest, type ProcessEditRequest } from '@/api/process'
+import { Search, Refresh, Plus, Delete, Download } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -552,6 +556,30 @@ const handleBatchDelete = () => {
   }).catch(() => {
     // 用户取消删除
   })
+}
+
+// 导出工序数据
+const handleExport = async () => {
+  try {
+    const response = await exportProcess(queryParams)
+    // 创建 Blob 对象
+    const blob = new Blob([response as any], { type: 'text/csv;charset=UTF-8' })
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    // 生成文件名
+    const now = new Date()
+    const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+    link.download = `工序数据_${timestamp}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (error: any) {
+    ElMessage.error(error.message || '导出失败')
+  }
 }
 
 // 初始化
