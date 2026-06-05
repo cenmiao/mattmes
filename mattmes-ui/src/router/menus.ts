@@ -4,7 +4,8 @@ import {
   User,
   UserFilled,
   Lock,
-  Document
+  Document,
+  Setting
 } from '@element-plus/icons-vue'
 
 export interface MenuItem {
@@ -44,5 +45,10 @@ export const menus: MenuItem[] = [
     title: '登录日志',
     icon: Document,
     permission: 'login-log:read'
+  },
+  {
+    path: '/process',
+    title: '工序管理',
+    icon: Setting
   }
 ]

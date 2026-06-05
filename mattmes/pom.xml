@@ -77,6 +77,11 @@
                 <artifactId>mattmes-business</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.matt</groupId>
+                <artifactId>mattmes-web</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
