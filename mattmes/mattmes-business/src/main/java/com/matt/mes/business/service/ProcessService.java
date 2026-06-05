@@ -6,6 +6,8 @@ import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * 工序服务接口
  */
@@ -33,4 +35,11 @@ public interface ProcessService {
      * @return 工序ID
      */
     Long updateStatus(Long id, Integer enable);
+
+    /**
+     * 导出工序数据为CSV
+     * @param request 查询条件
+     * @param response HTTP响应
+     */
+    void export(ProcessQueryRequest request, HttpServletResponse response);
 }

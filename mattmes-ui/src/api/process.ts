@@ -106,3 +106,15 @@ export function updateProcessStatus(id: number, enable: number) {
     params: { enable }
   })
 }
+
+/**
+ * 导出工序数据
+ */
+export function exportProcess(params: ProcessQueryRequest) {
+  return request<void>({
+    url: '/process/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}

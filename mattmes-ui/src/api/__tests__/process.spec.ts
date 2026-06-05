@@ -3,6 +3,7 @@ import {
   queryProcessList,
   addProcess,
   editProcess,
+  exportProcess,
   type ProcessQueryRequest,
   type ProcessAddRequest,
   type ProcessEditRequest,
@@ -130,6 +131,36 @@ describe('Process API', () => {
           name: '测试工序',
           processType: 'ASSEMBLY'
         }
+      })
+    })
+  })
+
+  describe('exportProcess', () => {
+    it('应调用 GET /process/export 并传递查询参数', async () => {
+      // 导出接口返回 void，mock 返回 undefined
+      vi.mocked(request).mockResolvedValue(undefined)
+
+      const params: ProcessQueryRequest = { code: 'ASM', enable: 1 }
+      await exportProcess(params)
+
+      expect(request).toHaveBeenCalledWith({
+        url: '/process/export',
+        method: 'get',
+        params: { code: 'ASM', enable: 1 },
+        responseType: 'blob'
+      })
+    })
+
+    it('导出接口应支持无条件导出', async () => {
+      vi.mocked(request).mockResolvedValue(undefined)
+
+      await exportProcess({})
+
+      expect(request).toHaveBeenCalledWith({
+        url: '/process/export',
+        method: 'get',
+        params: {},
+        responseType: 'blob'
       })
     })
   })

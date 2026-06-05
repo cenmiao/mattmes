@@ -7,6 +7,7 @@ import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
 import com.matt.mes.business.service.ProcessService;
 import com.matt.mes.common.result.Result;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,5 +55,13 @@ public class ProcessController {
     public Result<Long> updateStatus(@PathVariable Long id, @RequestParam Integer enable) {
         Long processId = processService.updateStatus(id, enable);
         return Result.success("状态更新成功", processId);
+    }
+
+    /**
+     * 导出工序数据
+     */
+    @GetMapping("/export")
+    public void export(ProcessQueryRequest request, HttpServletResponse response) {
+        processService.export(request, response);
     }
 }
