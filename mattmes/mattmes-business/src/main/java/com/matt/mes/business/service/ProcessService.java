@@ -6,6 +6,8 @@ import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
 
+import java.util.List;
+
 /**
  * 工序服务接口
  */
@@ -33,4 +35,18 @@ public interface ProcessService {
      * @return 工序ID
      */
     Long updateStatus(Long id, Integer enable);
+
+    /**
+     * 删除工序
+     * @param id 工序ID
+     * @return 被删除的工序ID
+     */
+    Long delete(Long id);
+
+    /**
+     * 批量删除工序
+     * @param ids 工序ID列表
+     * @return 被删除的工序ID列表
+     */
+    List<Long> batchDelete(List<Long> ids);
 }

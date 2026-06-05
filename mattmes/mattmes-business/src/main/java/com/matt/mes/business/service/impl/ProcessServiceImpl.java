@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Collectors;
 
 /**
  * 工序服务实现
@@ -182,6 +183,47 @@ public class ProcessServiceImpl implements ProcessService {
         processMapper.updateById(process);
 
         return process.getId();
+    }
+
+    @Override
+    public Long delete(Long id) {
+        // 1. 校验工序是否存在
+        MesProcess process = processMapper.selectById(id);
+        if (process == null) {
+            throw new BusinessException(400, "工序不存在");
+        }
+
+        // 2. 执行逻辑删除(MyBatis-Plus会自动设置deleted字段为1)
+        int rows = processMapper.deleteById(id);
+        if (rows == 0) {
+            throw new BusinessException(500, "删除工序失败");
+        }
+
+        return id;
+    }
+
+    @Override
+    public List<Long> batchDelete(List<Long> ids) {
+        // 1. 校验参数
+        if (ids == null || ids.isEmpty()) {
+            throw new BusinessException(400, "工序ID列表不能为空");
+        }
+
+        // 2. 校验所有工序是否存在
+        for (Long id : ids) {
+            MesProcess process = processMapper.selectById(id);
+            if (process == null) {
+                throw new BusinessException(400, "工序不存在");
+            }
+        }
+
+        // 3. 执行批量逻辑删除
+        int rows = processMapper.deleteBatchIds(ids);
+        if (rows == 0) {
+            throw new BusinessException(500, "批量删除工序失败");
+        }
+
+        return ids;
     }
 
     /**

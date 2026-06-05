@@ -17,6 +17,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -457,5 +460,109 @@ class ProcessServiceTest {
             processService.edit(request);
         });
         assertTrue(exception.getMessage().contains("工序类型无效"));
+    }
+
+    // ========== 删除工序测试 ==========
+
+    @Test
+    @DisplayName("单个删除工序成功返回被删除的工序ID")
+    void shouldDeleteProcessSuccessfully() {
+        // 准备:先插入一条工序
+        MesProcess process = new MesProcess();
+        process.setCode("DEL-001");
+        process.setName("待删除工序");
+        process.setProcessType("ASSEMBLY");
+        process.setEnable(1);
+        processMapper.insert(process);
+        Long processId = process.getId();
+
+        // 执行删除
+        Long deletedId = processService.delete(processId);
+
+        // 验证返回ID
+        assertNotNull(deletedId);
+        assertEquals(processId, deletedId);
+
+        // 验证工序已被逻辑删除(数据库中deleted字段应为1)
+        MesProcess deletedProcess = processMapper.selectById(processId);
+        assertNull(deletedProcess); // MyBatis-Plus逻辑删除后查询返回null
+    }
+
+    @Test
+    @DisplayName("工序不存在时删除应抛出业务异常")
+    void shouldThrowWhenDeleteProcessNotFound() {
+        // 尝试删除不存在的工序
+        Long nonExistentId = 99999L;
+
+        // 验证:应抛出BusinessException
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            processService.delete(nonExistentId);
+        });
+        assertTrue(exception.getMessage().contains("工序不存在"));
+    }
+
+    // ========== 批量删除工序测试 ==========
+
+    @Test
+    @DisplayName("批量删除工序成功返回被删除的工序ID列表")
+    void shouldBatchDeleteProcessesSuccessfully() {
+        // 准备:插入多条工序
+        MesProcess process1 = new MesProcess();
+        process1.setCode("BATCH-DEL-001");
+        process1.setName("待删除工序1");
+        process1.setProcessType("ASSEMBLY");
+        process1.setEnable(1);
+        processMapper.insert(process1);
+
+        MesProcess process2 = new MesProcess();
+        process2.setCode("BATCH-DEL-002");
+        process2.setName("待删除工序2");
+        process2.setProcessType("ASSEMBLY");
+        process2.setEnable(1);
+        processMapper.insert(process2);
+
+        MesProcess process3 = new MesProcess();
+        process3.setCode("BATCH-DEL-003");
+        process3.setName("待删除工序3");
+        process3.setProcessType("ASSEMBLY");
+        process3.setEnable(1);
+        processMapper.insert(process3);
+
+        List<Long> ids = Arrays.asList(process1.getId(), process2.getId(), process3.getId());
+
+        // 执行批量删除
+        List<Long> deletedIds = processService.batchDelete(ids);
+
+        // 验证返回ID列表
+        assertNotNull(deletedIds);
+        assertEquals(3, deletedIds.size());
+        assertTrue(deletedIds.containsAll(ids));
+
+        // 验证工序已被逻辑删除
+        for (Long id : ids) {
+            MesProcess deletedProcess = processMapper.selectById(id);
+            assertNull(deletedProcess); // MyBatis-Plus逻辑删除后查询返回null
+        }
+    }
+
+    @Test
+    @DisplayName("批量删除时部分工序不存在应抛出业务异常")
+    void shouldThrowWhenBatchDeletePartialNotFound() {
+        // 准备:插入一条工序
+        MesProcess process = new MesProcess();
+        process.setCode("BATCH-DEL-004");
+        process.setName("存在的工序");
+        process.setProcessType("ASSEMBLY");
+        process.setEnable(1);
+        processMapper.insert(process);
+
+        // 构建请求:包含存在的ID和不存在的ID
+        List<Long> ids = Arrays.asList(process.getId(), 99999L);
+
+        // 验证:应抛出BusinessException
+        BusinessException exception = assertThrows(BusinessException.class, () -> {
+            processService.batchDelete(ids);
+        });
+        assertTrue(exception.getMessage().contains("工序不存在"));
     }
 }

@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -217,6 +218,95 @@ class ProcessControllerTest {
                         .header("Authorization", "Bearer " + TEST_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("工序不存在"));
+    }
+
+    // ========== 删除工序接口测试 ==========
+
+    @Test
+    @DisplayName("DELETE /api/process/delete/{id} 接口删除工序成功")
+    void shouldDeleteProcessSuccessfully() throws Exception {
+        // 准备:先插入一条工序
+        MesProcess process = new MesProcess();
+        process.setCode("DEL-001");
+        process.setName("待删除工序");
+        process.setProcessType("ASSEMBLY");
+        process.setEnable(1);
+        processMapper.insert(process);
+
+        // 验证响应
+        mockMvc.perform(delete("/api/process/delete/{id}", process.getId())
+                        .header("Authorization", "Bearer " + TEST_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").exists());
+    }
+
+    @Test
+    @DisplayName("工序不存在时删除返回业务错误")
+    void shouldReturnErrorWhenDeleteProcessNotFound() throws Exception {
+        // 验证返回业务错误（HTTP 200，JSON code 400）
+        mockMvc.perform(delete("/api/process/delete/{id}", 99999L)
+                        .header("Authorization", "Bearer " + TEST_TOKEN))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("工序不存在"));
+    }
+
+    // ========== 批量删除工序接口测试 ==========
+
+    @Test
+    @DisplayName("DELETE /api/process/batchDelete 接口批量删除工序成功")
+    void shouldBatchDeleteProcessesSuccessfully() throws Exception {
+        // 准备:插入多条工序
+        MesProcess process1 = new MesProcess();
+        process1.setCode("BATCH-DEL-001");
+        process1.setName("待删除工序1");
+        process1.setProcessType("ASSEMBLY");
+        process1.setEnable(1);
+        processMapper.insert(process1);
+
+        MesProcess process2 = new MesProcess();
+        process2.setCode("BATCH-DEL-002");
+        process2.setName("待删除工序2");
+        process2.setProcessType("ASSEMBLY");
+        process2.setEnable(1);
+        processMapper.insert(process2);
+
+        String requestBody = "[" + process1.getId() + "," + process2.getId() + "]";
+
+        // 验证响应
+        mockMvc.perform(delete("/api/process/batchDelete")
+                        .header("Authorization", "Bearer " + TEST_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(2));
+    }
+
+    @Test
+    @DisplayName("批量删除时部分工序不存在返回业务错误")
+    void shouldReturnErrorWhenBatchDeletePartialNotFound() throws Exception {
+        // 准备:插入一条工序
+        MesProcess process = new MesProcess();
+        process.setCode("BATCH-DEL-003");
+        process.setName("存在的工序");
+        process.setProcessType("ASSEMBLY");
+        process.setEnable(1);
+        processMapper.insert(process);
+
+        // 构建请求:包含存在的ID和不存在的ID
+        String requestBody = "[" + process.getId() + ",99999]";
+
+        // 验证返回业务错误（HTTP 200，JSON code 400）
+        mockMvc.perform(delete("/api/process/batchDelete")
+                        .header("Authorization", "Bearer " + TEST_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("工序不存在"));

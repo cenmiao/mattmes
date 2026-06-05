@@ -60,6 +60,15 @@
             <el-icon><Plus /></el-icon>
             新增
           </el-button>
+          <el-button
+            type="danger"
+            @click="handleBatchDelete"
+            :disabled="selectedRows.length === 0"
+            v-permission="'process:delete'"
+          >
+            <el-icon><Delete /></el-icon>
+            批量删除
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -72,7 +81,9 @@
         border
         stripe
         style="width: 100%"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="code" label="工序编码" width="150" />
         <el-table-column prop="name" label="工序名称" width="180" />
@@ -97,10 +108,13 @@
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)" v-permission="'process:edit'">
               编辑
+            </el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(row)" v-permission="'process:delete'">
+              删除
             </el-button>
           </template>
         </el-table-column>
@@ -266,9 +280,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { queryProcessList, addProcess, editProcess, updateProcessStatus, type ProcessQueryRequest, type ProcessResponse, type ProcessAddRequest, type ProcessEditRequest } from '@/api/process'
-import { Search, Refresh, Plus } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { queryProcessList, addProcess, editProcess, updateProcessStatus, deleteProcess, batchDeleteProcesses, type ProcessQueryRequest, type ProcessResponse, type ProcessAddRequest, type ProcessEditRequest } from '@/api/process'
+import { Search, Refresh, Plus, Delete } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
 // 查询参数
@@ -285,6 +299,9 @@ const queryParams = reactive<ProcessQueryRequest>({
 const tableData = ref<ProcessResponse[]>([])
 const total = ref(0)
 const loading = ref(false)
+
+// 多选相关
+const selectedRows = ref<ProcessResponse[]>([])
 
 // 新增弹窗
 const addDialogVisible = ref(false)
@@ -481,6 +498,60 @@ const handleStatusChange = async (row: ProcessResponse) => {
     row.enable = row.enable === 1 ? 0 : 1
     ElMessage.error(error.message || '状态更新失败')
   }
+}
+
+// 多选变化
+const handleSelectionChange = (rows: ProcessResponse[]) => {
+  selectedRows.value = rows
+}
+
+// 删除单个工序
+const handleDelete = (row: ProcessResponse) => {
+  ElMessageBox.confirm(
+    `确定要删除工序"${row.name}"吗？`,
+    '删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      await deleteProcess(row.id)
+      ElMessage.success('删除工序成功')
+      handleQuery() // 刷新列表
+    } catch (error: any) {
+      ElMessage.error(error.message || '删除工序失败')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
+}
+
+// 批量删除工序
+const handleBatchDelete = () => {
+  const count = selectedRows.value.length
+  ElMessageBox.confirm(
+    `确定要删除选中的 ${count} 条工序吗？`,
+    '批量删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      const ids = selectedRows.value.map(row => row.id)
+      await batchDeleteProcesses(ids)
+      ElMessage.success(`成功删除 ${count} 条工序`)
+      handleQuery() // 刷新列表
+      selectedRows.value = [] // 清空选择
+    } catch (error: any) {
+      ElMessage.error(error.message || '批量删除工序失败')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
 }
 
 // 初始化

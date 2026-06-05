@@ -10,6 +10,8 @@ import com.matt.mes.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 工序管理Controller
  */
@@ -54,5 +56,23 @@ public class ProcessController {
     public Result<Long> updateStatus(@PathVariable Long id, @RequestParam Integer enable) {
         Long processId = processService.updateStatus(id, enable);
         return Result.success("状态更新成功", processId);
+    }
+
+    /**
+     * 删除工序
+     */
+    @DeleteMapping("/delete/{id}")
+    public Result<Long> delete(@PathVariable Long id) {
+        Long processId = processService.delete(id);
+        return Result.success("删除工序成功", processId);
+    }
+
+    /**
+     * 批量删除工序
+     */
+    @DeleteMapping("/batchDelete")
+    public Result<List<Long>> batchDelete(@RequestBody List<Long> ids) {
+        List<Long> deletedIds = processService.batchDelete(ids);
+        return Result.success("批量删除工序成功", deletedIds);
     }
 }

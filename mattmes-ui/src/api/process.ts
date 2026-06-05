@@ -106,3 +106,24 @@ export function updateProcessStatus(id: number, enable: number) {
     params: { enable }
   })
 }
+
+/**
+ * 删除工序
+ */
+export function deleteProcess(id: number) {
+  return request<{ id: number }>({
+    url: `/process/delete/${id}`,
+    method: 'delete'
+  })
+}
+
+/**
+ * 批量删除工序
+ */
+export function batchDeleteProcesses(ids: number[]) {
+  return request<number[]>({
+    url: '/process/batchDelete',
+    method: 'delete',
+    data: ids
+  })
+}
