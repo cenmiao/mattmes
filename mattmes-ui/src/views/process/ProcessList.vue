@@ -93,6 +93,13 @@
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
+        <el-table-column label="操作" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="handleEdit(row)" v-permission="'process:edit'">
+              编辑
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
 
       <!-- 分页 -->
@@ -179,12 +186,83 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 编辑弹窗 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑工序"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="editFormRef"
+        :model="editForm"
+        :rules="editFormRules"
+        label-width="100px"
+      >
+        <el-form-item label="工序编码">
+          <el-input
+            v-model="editForm.code"
+            disabled
+            placeholder="工序编码不可修改"
+          />
+        </el-form-item>
+        <el-form-item label="工序名称" prop="name">
+          <el-input
+            v-model="editForm.name"
+            placeholder="请输入工序名称"
+            maxlength="100"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="工序类型" prop="processType">
+          <el-select
+            v-model="editForm.processType"
+            placeholder="请选择工序类型"
+            style="width: 100%"
+          >
+            <el-option label="检测" value="INSPECTION" />
+            <el-option label="组装" value="ASSEMBLY" />
+            <el-option label="包装" value="PACKAGING" />
+            <el-option label="其他" value="OTHER" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="启用状态" prop="enable">
+          <el-radio-group v-model="editForm.enable">
+            <el-radio :value="1">启用</el-radio>
+            <el-radio :value="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="工序描述" prop="description">
+          <el-input
+            v-model="editForm.description"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入工序描述"
+          />
+        </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input
+            v-model="editForm.remark"
+            type="textarea"
+            :rows="2"
+            placeholder="请输入备注"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmitEdit" :loading="submitLoading">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { queryProcessList, addProcess, type ProcessQueryRequest, type ProcessResponse, type ProcessAddRequest } from '@/api/process'
+import { queryProcessList, addProcess, editProcess, type ProcessQueryRequest, type ProcessResponse, type ProcessAddRequest, type ProcessEditRequest } from '@/api/process'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -233,6 +311,30 @@ const addFormRules: FormRules = {
     { max: 50, message: '编码长度不能超过50个字符', trigger: 'blur' },
     { validator: validateCode, trigger: 'blur' }
   ],
+  name: [
+    { required: true, message: '请输入工序名称', trigger: 'blur' },
+    { max: 100, message: '名称长度不能超过100个字符', trigger: 'blur' }
+  ],
+  processType: [
+    { required: true, message: '请选择工序类型', trigger: 'change' }
+  ]
+}
+
+// 编辑弹窗
+const editDialogVisible = ref(false)
+const editFormRef = ref<FormInstance>()
+const editForm = reactive<ProcessEditRequest & { code: string }>({
+  id: 0,
+  code: '',
+  name: '',
+  processType: '',
+  description: '',
+  enable: 1,
+  remark: ''
+})
+
+// 编辑表单校验规则
+const editFormRules: FormRules = {
   name: [
     { required: true, message: '请输入工序名称', trigger: 'blur' },
     { max: 100, message: '名称长度不能超过100个字符', trigger: 'blur' }
@@ -293,6 +395,45 @@ const handleSubmitAdd = async () => {
     handleQuery() // 刷新列表
   } catch (error: any) {
     ElMessage.error(error.message || '新增工序失败')
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+// 打开编辑弹窗
+const handleEdit = (row: ProcessResponse) => {
+  // 填充表单数据
+  editForm.id = row.id
+  editForm.code = row.code
+  editForm.name = row.name
+  editForm.processType = row.processType
+  editForm.description = row.description || ''
+  editForm.enable = row.enable
+  editForm.remark = row.remark || ''
+  editFormRef.value?.resetFields()
+  editDialogVisible.value = true
+}
+
+// 提交编辑
+const handleSubmitEdit = async () => {
+  const valid = await editFormRef.value?.validate()
+  if (!valid) return
+
+  submitLoading.value = true
+  try {
+    await editProcess({
+      id: editForm.id,
+      name: editForm.name,
+      processType: editForm.processType,
+      description: editForm.description,
+      enable: editForm.enable,
+      remark: editForm.remark
+    })
+    ElMessage.success('编辑工序成功')
+    editDialogVisible.value = false
+    handleQuery() // 刷新列表
+  } catch (error: any) {
+    ElMessage.error(error.message || '编辑工序失败')
   } finally {
     submitLoading.value = false
   }

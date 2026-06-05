@@ -1,6 +1,7 @@
 package com.matt.mes.controller;
 
 import com.matt.mes.business.dto.ProcessAddRequest;
+import com.matt.mes.business.dto.ProcessEditRequest;
 import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
@@ -35,5 +36,14 @@ public class ProcessController {
     public Result<Long> add(@RequestBody ProcessAddRequest request) {
         Long id = processService.add(request);
         return Result.success("新增工序成功", id);
+    }
+
+    /**
+     * 编辑工序
+     */
+    @PutMapping("/edit")
+    public Result<Long> edit(@RequestBody ProcessEditRequest request) {
+        Long id = processService.edit(request);
+        return Result.success("编辑工序成功", id);
     }
 }

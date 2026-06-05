@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import { request } from '@/utils/request'
 
 /**
  * 工序查询请求参数
@@ -52,6 +52,18 @@ export interface ProcessAddRequest {
 }
 
 /**
+ * 工序编辑请求参数
+ */
+export interface ProcessEditRequest {
+  id: number
+  name: string
+  processType: string
+  description?: string
+  enable?: number
+  remark?: string
+}
+
+/**
  * 查询工序列表
  */
 export function queryProcessList(params: ProcessQueryRequest) {
@@ -69,6 +81,17 @@ export function addProcess(data: ProcessAddRequest) {
   return request<{ id: number }>({
     url: '/process/add',
     method: 'post',
+    data
+  })
+}
+
+/**
+ * 编辑工序
+ */
+export function editProcess(data: ProcessEditRequest) {
+  return request<{ id: number }>({
+    url: '/process/edit',
+    method: 'put',
     data
   })
 }

@@ -65,7 +65,7 @@ export interface ApiResponse<T> {
 }
 
 export function request<T>(config: AxiosRequestConfig): Promise<T> {
-  return service(config)
+  return service(config) as Promise<T>
 }
 
 export function get<T>(url: string, params?: object): Promise<T> {

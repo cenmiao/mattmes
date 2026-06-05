@@ -2,18 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   queryProcessList,
   addProcess,
+  editProcess,
   type ProcessQueryRequest,
   type ProcessAddRequest,
+  type ProcessEditRequest,
   type ProcessPageResult
 } from '@/api/process'
 
 // Mock整个request模块
 vi.mock('@/utils/request', () => ({
-  default: vi.fn()
+  request: vi.fn()
 }))
 
 // 导入mock后的request
-import request from '@/utils/request'
+import { request } from '@/utils/request'
 
 describe('Process API', () => {
   beforeEach(() => {
@@ -81,6 +83,52 @@ describe('Process API', () => {
           code: 'NEW-002',
           name: '测试工序',
           processType: 'INSPECTION'
+        }
+      })
+    })
+  })
+
+  describe('editProcess', () => {
+    it('应调用 PUT /process/edit 并传递编辑数据', async () => {
+      // Mock返回更新工序的ID
+      vi.mocked(request).mockResolvedValue({ id: 1 })
+
+      const data: ProcessEditRequest = {
+        id: 1,
+        name: '更新后的工序',
+        processType: 'INSPECTION',
+        enable: 0,
+        description: '更新后的描述',
+        remark: '更新后的备注'
+      }
+      const result = await editProcess(data)
+
+      expect(request).toHaveBeenCalledWith({
+        url: '/process/edit',
+        method: 'put',
+        data
+      })
+      expect(result).toEqual({ id: 1 })
+    })
+
+    it('编辑请求应包含工序ID', async () => {
+      vi.mocked(request).mockResolvedValue({ id: 100 })
+
+      const data: ProcessEditRequest = {
+        id: 100,
+        name: '测试工序',
+        processType: 'ASSEMBLY'
+      }
+      await editProcess(data)
+
+      // 验证请求包含id
+      expect(request).toHaveBeenCalledWith({
+        url: '/process/edit',
+        method: 'put',
+        data: {
+          id: 100,
+          name: '测试工序',
+          processType: 'ASSEMBLY'
         }
       })
     })

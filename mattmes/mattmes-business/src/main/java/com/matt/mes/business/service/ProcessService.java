@@ -1,6 +1,7 @@
 package com.matt.mes.business.service;
 
 import com.matt.mes.business.dto.ProcessAddRequest;
+import com.matt.mes.business.dto.ProcessEditRequest;
 import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
@@ -19,4 +20,9 @@ public interface ProcessService {
      * 新增工序
      */
     Long add(ProcessAddRequest request);
+
+    /**
+     * 编辑工序
+     */
+    Long edit(ProcessEditRequest request);
 }

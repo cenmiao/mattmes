@@ -2,6 +2,7 @@ package com.matt.mes.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.matt.mes.business.dto.ProcessAddRequest;
+import com.matt.mes.business.dto.ProcessEditRequest;
 import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
@@ -20,6 +21,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -148,8 +150,8 @@ class ProcessControllerTest {
     }
 
     @Test
-    @DisplayName("编码重复时返回400错误")
-    void shouldReturn400WhenCodeDuplicate() throws Exception {
+    @DisplayName("编码重复时返回业务错误")
+    void shouldReturnErrorWhenCodeDuplicate() throws Exception {
         // 准备:已存在的工序
         insertTestProcess("DUP-002", "已存在工序", "ASSEMBLY", 1);
 
@@ -159,12 +161,64 @@ class ProcessControllerTest {
         request.setName("新工序");
         request.setProcessType("ASSEMBLY");
 
-        // 验证返回400错误
+        // 验证返回业务错误（HTTP 200，JSON code 400）
         mockMvc.perform(post("/api/process/add")
                         .header("Authorization", "Bearer " + TEST_TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message").value("工序编码已存在"));
+    }
+
+    // ========== 编辑工序接口测试 ==========
+
+    @Test
+    @DisplayName("PUT /api/process/edit 接口编辑工序成功")
+    void shouldEditProcessSuccessfully() throws Exception {
+        // 准备:先插入一条工序
+        MesProcess process = new MesProcess();
+        process.setCode("EDIT-001");
+        process.setName("原始工序");
+        process.setProcessType("ASSEMBLY");
+        process.setEnable(1);
+        processMapper.insert(process);
+
+        // 构建编辑请求
+        ProcessEditRequest request = new ProcessEditRequest();
+        request.setId(process.getId());
+        request.setName("更新后的工序");
+        request.setProcessType("INSPECTION");
+        request.setEnable(0);
+        request.setDescription("更新后的描述");
+        request.setRemark("更新后的备注");
+
+        // 验证响应
+        mockMvc.perform(put("/api/process/edit")
+                        .header("Authorization", "Bearer " + TEST_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").exists());
+    }
+
+    @Test
+    @DisplayName("工序不存在时编辑返回业务错误")
+    void shouldReturnErrorWhenProcessNotFound() throws Exception {
+        // 构建编辑请求:使用不存在的ID
+        ProcessEditRequest request = new ProcessEditRequest();
+        request.setId(99999L);
+        request.setName("测试工序");
+        request.setProcessType("ASSEMBLY");
+
+        // 验证返回业务错误（HTTP 200，JSON code 400）
+        mockMvc.perform(put("/api/process/edit")
+                        .header("Authorization", "Bearer " + TEST_TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("工序不存在"));
     }
 }

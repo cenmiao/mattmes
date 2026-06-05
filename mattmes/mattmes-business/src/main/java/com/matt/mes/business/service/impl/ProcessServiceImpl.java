@@ -3,10 +3,12 @@ package com.matt.mes.business.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.matt.mes.business.dto.ProcessAddRequest;
+import com.matt.mes.business.dto.ProcessEditRequest;
 import com.matt.mes.business.dto.ProcessPageResult;
 import com.matt.mes.business.dto.ProcessQueryRequest;
 import com.matt.mes.business.dto.ProcessResponse;
 import com.matt.mes.business.entity.MesProcess;
+import com.matt.mes.business.enums.ProcessType;
 import com.matt.mes.business.mapper.ProcessMapper;
 import com.matt.mes.business.service.ProcessService;
 import com.matt.mes.common.exception.BusinessException;
@@ -112,6 +114,52 @@ public class ProcessServiceImpl implements ProcessService {
 
         // 6. 保存工序
         processMapper.insert(process);
+
+        return process.getId();
+    }
+
+    @Override
+    public Long edit(ProcessEditRequest request) {
+        // 1. 校验工序是否存在
+        MesProcess process = processMapper.selectById(request.getId());
+        if (process == null) {
+            throw new BusinessException(400, "工序不存在");
+        }
+
+        // 2. 校验必填项
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new BusinessException(400, "工序名称不能为空");
+        }
+        if (request.getProcessType() == null || request.getProcessType().trim().isEmpty()) {
+            throw new BusinessException(400, "工序类型不能为空");
+        }
+
+        // 3. 校验字段长度
+        if (request.getName().length() > 100) {
+            throw new BusinessException(400, "工序名称长度不能超过100个字符");
+        }
+
+        // 4. 校验工序类型有效性
+        boolean validProcessType = false;
+        for (ProcessType type : ProcessType.values()) {
+            if (type.getCode().equals(request.getProcessType())) {
+                validProcessType = true;
+                break;
+            }
+        }
+        if (!validProcessType) {
+            throw new BusinessException(400, "工序类型无效");
+        }
+
+        // 5. 更新工序信息（编码不可修改）
+        process.setName(request.getName());
+        process.setProcessType(request.getProcessType());
+        process.setDescription(request.getDescription());
+        process.setEnable(request.getEnable());
+        process.setRemark(request.getRemark());
+
+        // 6. 保存更新
+        processMapper.updateById(process);
 
         return process.getId();
     }
