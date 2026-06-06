@@ -102,10 +102,9 @@ public class ProcessServiceImpl implements ProcessService {
             throw new BusinessException(400, "工序编码只能包含字母、数字、下划线和中划线");
         }
 
-        // 4. 校验编码唯一性
-        LambdaQueryWrapper<MesProcess> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(MesProcess::getCode, request.getCode());
-        Long count = processMapper.selectCount(queryWrapper);
+        // 4. 校验编码唯一性（包括已删除的记录，避免唯一键冲突）
+        // 使用自定义查询方法，不受逻辑删除限制
+        Long count = processMapper.countByCodeIncludeDeleted(request.getCode());
         if (count > 0) {
             throw new BusinessException(400, "工序编码已存在");
         }

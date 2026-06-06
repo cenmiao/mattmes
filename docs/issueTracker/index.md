@@ -9,6 +9,7 @@
 | 编号 | 问题类型 | 文件 | 描述 |
 |------|----------|------|------|
 | ISS-001 | 前端路由/API路径 | [routeIssues.md](routeIssues.md) | 前端API路径重复导致请求失败 |
+| ISS-002 | 后端编译缓存 | [compileCacheIssues.md](compileCacheIssues.md) | Maven插件缓存导致NoSuchMethodError |
 
 ---
 
