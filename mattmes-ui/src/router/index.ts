@@ -65,6 +65,12 @@ const routes: RouteRecordRaw[] = [
         name: 'ProcessList',
         component: () => import('@/views/process/ProcessList.vue'),
         meta: { title: '工序管理' }
+      },
+      {
+        path: 'projects',
+        name: 'ProjectList',
+        component: () => import('@/views/project/ProjectList.vue'),
+        meta: { title: '项目管理' }
       }
     ]
   },
