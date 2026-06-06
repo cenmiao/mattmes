@@ -24,6 +24,10 @@ service.interceptors.request.use(
 
 service.interceptors.response.use(
   (response: AxiosResponse) => {
+    // 如果是 blob 类型响应（文件下载），直接返回 data
+    if (response.config.responseType === 'blob') {
+      return response.data
+    }
     const { code, message, data } = response.data
     if (code === 200) {
       return data
@@ -65,7 +69,7 @@ export interface ApiResponse<T> {
 }
 
 export function request<T>(config: AxiosRequestConfig): Promise<T> {
-  return service(config)
+  return service(config) as Promise<T>
 }
 
 export function get<T>(url: string, params?: object): Promise<T> {

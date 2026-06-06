@@ -59,6 +59,12 @@ const routes: RouteRecordRaw[] = [
         name: 'LoginLogList',
         component: () => import('@/views/login-log/LoginLogList.vue'),
         meta: { title: '登录日志', permission: 'login-log:read' }
+      },
+      {
+        path: 'process',
+        name: 'ProcessList',
+        component: () => import('@/views/process/ProcessList.vue'),
+        meta: { title: '工序管理' }
       }
     ]
   },

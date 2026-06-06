@@ -19,6 +19,16 @@
             <groupId>com.matt</groupId>
             <artifactId>mattmes-business</artifactId>
         </dependency>
+
+        <!-- Business module (for test) -->
+        <dependency>
+            <groupId>com.matt</groupId>
+            <artifactId>mattmes-business</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.matt</groupId>
             <artifactId>mattmes-system</artifactId>

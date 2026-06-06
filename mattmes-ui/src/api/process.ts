@@ -1,0 +1,141 @@
+import { request } from '@/utils/request'
+
+/**
+ * 工序查询请求参数
+ */
+export interface ProcessQueryRequest {
+  code?: string
+  name?: string
+  processType?: string
+  enable?: number
+  pageNum?: number
+  pageSize?: number
+}
+
+/**
+ * 工序响应数据
+ */
+export interface ProcessResponse {
+  id: number
+  code: string
+  name: string
+  processType: string
+  description?: string
+  enable: number
+  remark?: string
+  createdBy?: string
+  createTime?: string
+  updatedBy?: string
+  updateTime?: string
+}
+
+/**
+ * 分页结果
+ */
+export interface ProcessPageResult {
+  list: ProcessResponse[]
+  total: number
+  pageNum: number
+  pageSize: number
+}
+
+/**
+ * 工序新增请求参数
+ */
+export interface ProcessAddRequest {
+  code: string
+  name: string
+  processType: string
+  description?: string
+  enable?: number
+  remark?: string
+}
+
+/**
+ * 工序编辑请求参数
+ */
+export interface ProcessEditRequest {
+  id: number
+  name: string
+  processType: string
+  description?: string
+  enable?: number
+  remark?: string
+}
+
+/**
+ * 查询工序列表
+ */
+export function queryProcessList(params: ProcessQueryRequest) {
+  return request<ProcessPageResult>({
+    url: '/process/list',
+    method: 'post',
+    data: params
+  })
+}
+
+/**
+ * 新增工序
+ */
+export function addProcess(data: ProcessAddRequest) {
+  return request<{ id: number }>({
+    url: '/process/add',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 编辑工序
+ */
+export function editProcess(data: ProcessEditRequest) {
+  return request<{ id: number }>({
+    url: '/process/edit',
+    method: 'put',
+    data
+  })
+}
+
+/**
+ * 更新工序启用状态
+ */
+export function updateProcessStatus(id: number, enable: number) {
+  return request<{ id: number }>({
+    url: `/process/status/${id}`,
+    method: 'put',
+    params: { enable }
+  })
+}
+
+/**
+ * 删除工序
+ */
+export function deleteProcess(id: number) {
+  return request<{ id: number }>({
+    url: `/process/delete/${id}`,
+    method: 'delete'
+  })
+}
+
+/**
+ * 批量删除工序
+ */
+export function batchDeleteProcesses(ids: number[]) {
+  return request<number[]>({
+    url: '/process/batchDelete',
+    method: 'delete',
+    data: ids
+  })
+}
+
+/**
+ * 导出工序数据
+ */
+export function exportProcess(params: ProcessQueryRequest) {
+  return request<void>({
+    url: '/process/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
