@@ -7,6 +7,7 @@ import com.matt.mes.business.entity.MesProject;
 import com.matt.mes.business.mapper.ProjectMapper;
 import com.matt.mes.business.service.ProjectService;
 import com.matt.mes.common.exception.BusinessException;
+import com.matt.mes.common.exception.BusinessException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -235,6 +236,22 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
+    @Override
+    public List<ProjectSimpleResponse> listEnabled() {
+        // 1. 构建查询条件:只查询启用状态的项目
+        LambdaQueryWrapper<MesProject> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(MesProject::getEnable, 1);
+        queryWrapper.orderByAsc(MesProject::getCode);
+
+        // 2. 执行查询
+        List<MesProject> projects = projectMapper.selectList(queryWrapper);
+
+        // 3. 转换为响应DTO
+        return projects.stream()
+                .map(this::convertToProjectSimpleResponse)
+                .collect(Collectors.toList());
+    }
+
     /**
      * 转换为响应DTO
      */
@@ -250,6 +267,18 @@ public class ProjectServiceImpl implements ProjectService {
         response.setCreateTime(project.getCreateTime());
         response.setUpdatedBy(project.getUpdatedBy());
         response.setUpdateTime(project.getUpdateTime());
+        return response;
+    }
+
+    /**
+     * 转换为简单响应DTO
+     */
+    private ProjectSimpleResponse convertToProjectSimpleResponse(MesProject project) {
+        ProjectSimpleResponse response = new ProjectSimpleResponse();
+        response.setId(project.getId());
+        response.setCode(project.getCode());
+        response.setName(project.getName());
+        response.setEnable(project.getEnable());
         return response;
     }
 

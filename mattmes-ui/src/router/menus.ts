@@ -6,7 +6,8 @@ import {
   Lock,
   Document,
   Setting,
-  FolderOpened
+  FolderOpened,
+  Box
 } from '@element-plus/icons-vue'
 
 export interface MenuItem {
@@ -56,5 +57,10 @@ export const menus: MenuItem[] = [
     path: '/projects',
     title: '项目管理',
     icon: FolderOpened
+  },
+  {
+    path: '/materials',
+    title: '料号管理',
+    icon: Box
   }
 ]

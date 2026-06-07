@@ -6,6 +6,7 @@ import com.matt.mes.business.dto.ProjectEditRequest;
 import com.matt.mes.business.dto.ProjectPageResult;
 import com.matt.mes.business.dto.ProjectQueryRequest;
 import com.matt.mes.business.dto.ProjectResponse;
+import com.matt.mes.business.dto.ProjectSimpleResponse;
 import com.matt.mes.business.entity.MesProject;
 import com.matt.mes.business.mapper.ProjectMapper;
 import com.matt.mes.common.exception.BusinessException;
@@ -525,6 +526,42 @@ class ProjectServiceTest {
 
         // 验证导出成功(不抛出异常)
         // 实际导出内容验证需要更复杂的mock,暂时验证方法执行不抛异常
+    }
+
+    // ========== 获取启用项目列表测试 ==========
+
+    @Test
+    @DisplayName("获取启用项目列表成功")
+    void shouldListEnabledProjectsSuccessfully() {
+        // 执行查询
+        List<ProjectSimpleResponse> result = projectService.listEnabled();
+
+        // 验证返回列表不为空
+        assertNotNull(result);
+
+        // 验证所有返回的项目都是启用状态
+        assertTrue(result.stream().allMatch(p -> p.getEnable() == 1));
+
+        // 验证setUp中插入的启用项目都在列表中
+        assertTrue(result.stream().anyMatch(p -> "IPHONE17".equals(p.getCode())));
+        assertTrue(result.stream().anyMatch(p -> "IPHONE18".equals(p.getCode())));
+        assertTrue(result.stream().anyMatch(p -> "MACBOOK2024".equals(p.getCode())));
+        assertTrue(result.stream().anyMatch(p -> "WATCH10".equals(p.getCode())));
+
+        // 验证禁用的项目不在列表中
+        assertTrue(result.stream().noneMatch(p -> "IPHONE19".equals(p.getCode())));
+    }
+
+    @Test
+    @DisplayName("启用项目列表按编码升序排序")
+    void shouldListEnabledProjectsSortedByCode() {
+        // 执行查询
+        List<ProjectSimpleResponse> result = projectService.listEnabled();
+
+        // 验证列表按编码升序排序
+        for (int i = 0; i < result.size() - 1; i++) {
+            assertTrue(result.get(i).getCode().compareTo(result.get(i + 1).getCode()) <= 0);
+        }
     }
 
     /**

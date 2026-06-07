@@ -78,4 +78,13 @@ public class ProjectController {
     public void export(ProjectQueryRequest request, HttpServletResponse response) {
         projectService.export(request, response);
     }
+
+    /**
+     * 获取启用项目列表(用于下拉框)
+     */
+    @GetMapping("/enabled")
+    public Result<java.util.List<ProjectSimpleResponse>> listEnabled() {
+        java.util.List<ProjectSimpleResponse> result = projectService.listEnabled();
+        return Result.success(result);
+    }
 }

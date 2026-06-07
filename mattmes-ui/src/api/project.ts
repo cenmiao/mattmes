@@ -135,3 +135,23 @@ export function exportProject(params: ProjectQueryRequest) {
     responseType: 'blob'
   })
 }
+
+/**
+ * 项目简单响应对象（下拉列表用）
+ */
+export interface ProjectSimpleResponse {
+  id: number
+  code: string
+  name: string
+  enable: number
+}
+
+/**
+ * 获取启用项目列表（用于下拉框）
+ */
+export function listEnabledProjects() {
+  return request<ProjectSimpleResponse[]>({
+    url: '/project/enabled',
+    method: 'get'
+  })
+}

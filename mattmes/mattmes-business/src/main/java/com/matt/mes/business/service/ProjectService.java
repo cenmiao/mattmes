@@ -5,6 +5,7 @@ import com.matt.mes.business.dto.ProjectEditRequest;
 import com.matt.mes.business.dto.ProjectPageResult;
 import com.matt.mes.business.dto.ProjectQueryRequest;
 import com.matt.mes.business.dto.ProjectResponse;
+import com.matt.mes.business.dto.ProjectSimpleResponse;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -48,4 +49,9 @@ public interface ProjectService {
      * 导出项目数据
      */
     void export(ProjectQueryRequest request, HttpServletResponse response);
+
+    /**
+     * 获取启用项目列表(用于下拉框)
+     */
+    List<ProjectSimpleResponse> listEnabled();
 }
