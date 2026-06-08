@@ -61,6 +61,7 @@ export const menus: MenuItem[] = [
   {
     path: '/materials',
     title: '料号管理',
-    icon: Box
+    icon: Box,
+    permission: 'material:read'
   }
 ]

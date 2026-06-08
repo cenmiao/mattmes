@@ -76,7 +76,7 @@ const routes: RouteRecordRaw[] = [
         path: 'materials',
         name: 'MaterialList',
         component: () => import('@/views/material/MaterialList.vue'),
-        meta: { title: '料号管理' }
+        meta: { title: '料号管理', permission: 'material:read' }
       }
     ]
   },
