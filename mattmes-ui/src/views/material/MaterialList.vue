@@ -62,6 +62,19 @@
             <el-icon><Plus /></el-icon>
             新增
           </el-button>
+          <el-button
+            type="danger"
+            @click="handleBatchDelete"
+            :disabled="selectedRows.length === 0"
+            v-permission="'material:delete'"
+          >
+            <el-icon><Delete /></el-icon>
+            批量删除
+          </el-button>
+          <el-button type="warning" @click="handleExport" v-permission="'material:export'">
+            <el-icon><Download /></el-icon>
+            导出
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -74,7 +87,9 @@
         border
         stripe
         style="width: 100%"
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="code" label="料号编码" width="150" />
         <el-table-column prop="name" label="料号名称" width="180" />
@@ -83,8 +98,13 @@
         <el-table-column prop="size" label="尺码" width="120" />
         <el-table-column prop="enable" label="启用状态" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.enable === 1" type="success">启用</el-tag>
-            <el-tag v-else type="danger">禁用</el-tag>
+            <el-switch
+              v-model="row.enable"
+              :active-value="1"
+              :inactive-value="0"
+              @change="handleStatusChange(row)"
+              v-permission="'material:edit'"
+            />
           </template>
         </el-table-column>
         <el-table-column prop="createdBy" label="创建人" width="120" />
@@ -93,6 +113,9 @@
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)" v-permission="'material:edit'">
               编辑
+            </el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(row)" v-permission="'material:delete'">
+              删除
             </el-button>
           </template>
         </el-table-column>
@@ -335,13 +358,17 @@ import {
   queryMaterialList,
   addMaterial,
   editMaterial,
+  deleteMaterial,
+  batchDeleteMaterials,
+  updateMaterialStatus,
+  exportMaterial,
   type MaterialQueryRequest,
   type MaterialResponse,
   type MaterialAddRequest
 } from '@/api/material'
 import { listEnabledProjects, type ProjectSimpleResponse } from '@/api/project'
-import { Search, Refresh, Plus } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { Search, Refresh, Plus, Delete, Download } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
 // 查询参数
@@ -358,6 +385,9 @@ const queryParams = reactive<MaterialQueryRequest>({
 const tableData = ref<MaterialResponse[]>([])
 const total = ref(0)
 const loading = ref(false)
+
+// 多选相关
+const selectedRows = ref<MaterialResponse[]>([])
 
 // 项目列表(用于下拉框)
 const projectList = ref<ProjectSimpleResponse[]>([])
@@ -595,6 +625,97 @@ const handleSubmitEdit = async () => {
     ElMessage.error(error.message || '编辑料号失败')
   } finally {
     submitLoading.value = false
+  }
+}
+
+// 状态切换
+const handleStatusChange = async (row: MaterialResponse) => {
+  try {
+    await updateMaterialStatus(row.id, row.enable)
+    ElMessage.success('状态更新成功')
+  } catch (error: any) {
+    // 更新失败时恢复原状态
+    row.enable = row.enable === 1 ? 0 : 1
+    ElMessage.error(error.message || '状态更新失败')
+  }
+}
+
+// 多选变化
+const handleSelectionChange = (rows: MaterialResponse[]) => {
+  selectedRows.value = rows
+}
+
+// 删除单个料号
+const handleDelete = (row: MaterialResponse) => {
+  ElMessageBox.confirm(
+    `确定要删除料号"${row.name}"吗？`,
+    '删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      await deleteMaterial(row.id)
+      ElMessage.success('删除料号成功')
+      handleQuery() // 刷新列表
+    } catch (error: any) {
+      ElMessage.error(error.message || '删除料号失败')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
+}
+
+// 批量删除料号
+const handleBatchDelete = () => {
+  const count = selectedRows.value.length
+  ElMessageBox.confirm(
+    `确定要删除选中的 ${count} 条料号吗？`,
+    '批量删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      const ids = selectedRows.value.map(row => row.id)
+      await batchDeleteMaterials(ids)
+      ElMessage.success(`成功删除 ${count} 条料号`)
+      handleQuery() // 刷新列表
+      selectedRows.value = [] // 清空选择
+    } catch (error: any) {
+      // 批量删除可能返回统计信息
+      ElMessage.error(error.message || '批量删除料号失败')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
+}
+
+// 导出料号数据
+const handleExport = async () => {
+  try {
+    const response = await exportMaterial(queryParams)
+    // 创建 Blob 对象
+    const blob = new Blob([response as any], { type: 'text/csv;charset=UTF-8' })
+    // 创建下载链接
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    // 生成文件名
+    const now = new Date()
+    const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`
+    link.download = `料号列表_${timestamp}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (error: any) {
+    ElMessage.error(error.message || '导出失败')
   }
 }
 
