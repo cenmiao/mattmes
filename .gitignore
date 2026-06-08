@@ -23,3 +23,6 @@ Thumbs.db
 # Agent worktrees (keep config)
 .claude/worktrees/
 .claude/sessions/
+
+.codegraph/
+.node_modules/

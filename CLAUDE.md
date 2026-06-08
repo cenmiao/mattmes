@@ -39,6 +39,7 @@ Matt MES管理系统 - 离散制造执行系统,采用前后端分离架构:
 - 开发完成后需要编译对应的项目，确保项目可以成功编译
 
 
+
 ### 数据库
 - url: jdbc:mysql://localhost:3306/
 - account: root
