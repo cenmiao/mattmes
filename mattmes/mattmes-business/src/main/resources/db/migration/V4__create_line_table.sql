@@ -17,4 +17,4 @@ CREATE TABLE IF NOT EXISTS `mes_line` (
   UNIQUE KEY `uk_line_code` (`line_code`),
   KEY `idx_enable` (`enable`),
   KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='线体表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='线体表';
