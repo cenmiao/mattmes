@@ -42,6 +42,10 @@
             <el-icon><Refresh /></el-icon>
             重置
           </el-button>
+          <el-button type="success" @click="handleAdd" v-permission="'line:add'">
+            <el-icon><Plus /></el-icon>
+            新增
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -89,13 +93,69 @@
         style="margin-top: 20px; justify-content: flex-end"
       />
     </el-card>
+
+    <!-- 新增弹窗 -->
+    <el-dialog
+      v-model="addDialogVisible"
+      title="新增线体"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="addFormRef"
+        :model="addForm"
+        :rules="addFormRules"
+        label-width="100px"
+      >
+        <el-form-item label="线体编码" prop="code">
+          <el-input
+            v-model="addForm.code"
+            placeholder="请输入线体编码"
+            maxlength="50"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="线体名称" prop="name">
+          <el-input
+            v-model="addForm.name"
+            placeholder="请输入线体名称"
+            maxlength="100"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="启用状态" prop="enable">
+          <el-radio-group v-model="addForm.enable">
+            <el-radio :value="1">启用</el-radio>
+            <el-radio :value="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input
+            v-model="addForm.description"
+            type="textarea"
+            :rows="3"
+            maxlength="500"
+            show-word-limit
+            placeholder="请输入描述"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="addDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmitAdd" :loading="submitLoading">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { queryLineList, type LineQueryRequest, type LineResponse } from '@/api/line'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { queryLineList, addLine, type LineQueryRequest, type LineResponse, type LineAddRequest } from '@/api/line'
+import { Search, Refresh, Plus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 
 // 查询参数
 const queryParams = reactive<LineQueryRequest>({
@@ -113,6 +173,56 @@ const loading = ref(false)
 
 // 多选相关
 const selectedRows = ref<LineResponse[]>([])
+
+// 新增弹窗
+const addDialogVisible = ref(false)
+const addFormRef = ref<FormInstance>()
+const submitLoading = ref(false)
+const addForm = reactive<LineAddRequest>({
+  code: '',
+  name: '',
+  description: '',
+  enable: 1
+})
+
+// 编码格式校验（仅允许字母、数字、下划线、中划线；纯空白视为为空），与后端规则一致
+const validateCode = (_rule: any, value: string, callback: (error?: Error) => void) => {
+  if (value === null || value === undefined || value.trim() === '') {
+    callback(new Error('请输入线体编码'))
+    return
+  }
+  if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+    callback(new Error('线体编码只能包含字母、数字、下划线和中划线'))
+  } else {
+    callback()
+  }
+}
+
+// 名称校验（纯空白视为为空），与后端规则一致
+const validateName = (_rule: any, value: string, callback: (error?: Error) => void) => {
+  if (value === null || value === undefined || value.trim() === '') {
+    callback(new Error('请输入线体名称'))
+  } else {
+    callback()
+  }
+}
+
+// 新增表单校验规则，与后端规则一致
+const addFormRules: FormRules = {
+  code: [
+    { required: true, message: '请输入线体编码', trigger: 'blur' },
+    { max: 50, message: '线体编码长度不能超过50个字符', trigger: 'blur' },
+    { validator: validateCode, trigger: 'blur' }
+  ],
+  name: [
+    { required: true, message: '请输入线体名称', trigger: 'blur' },
+    { max: 100, message: '线体名称长度不能超过100个字符', trigger: 'blur' },
+    { validator: validateName, trigger: 'blur' }
+  ],
+  description: [
+    { max: 500, message: '描述长度不能超过500个字符', trigger: 'blur' }
+  ]
+}
 
 // 查询线体列表
 const handleQuery = async () => {
@@ -141,6 +251,47 @@ const handleReset = () => {
 // 多选变化
 const handleSelectionChange = (rows: LineResponse[]) => {
   selectedRows.value = rows
+}
+
+// 打开新增弹窗
+const handleAdd = () => {
+  addForm.code = ''
+  addForm.name = ''
+  addForm.description = ''
+  addForm.enable = 1
+  addFormRef.value?.clearValidate()
+  addDialogVisible.value = true
+}
+
+// 提交新增
+const handleSubmitAdd = async () => {
+  if (!addFormRef.value) return
+  // 校验不通过（前端规则：必填、长度、编码格式）时不发起请求
+  let valid = false
+  try {
+    valid = await addFormRef.value.validate()
+  } catch {
+    valid = false
+  }
+  if (!valid) return
+
+  submitLoading.value = true
+  try {
+    await addLine({
+      code: addForm.code.trim(),
+      name: addForm.name.trim(),
+      description: addForm.description,
+      enable: addForm.enable
+    })
+    ElMessage.success('新增线体成功')
+    addDialogVisible.value = false
+    // 刷新列表，确保新记录立即可见
+    handleQuery()
+  } catch (error: any) {
+    ElMessage.error(error.message || '新增线体失败')
+  } finally {
+    submitLoading.value = false
+  }
 }
 
 // 初始化
