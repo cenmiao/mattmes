@@ -17,9 +17,18 @@ MES管理系统前端 - Vue 3 + TypeScript + Vite + Element Plus
 ## 常用命令
 
 ```bash
-# 开发服务器 (http://localhost:3000)
+# 启动前端命令 (http://localhost:3000)
 npm run dev
 
+# 启动后端命令
+cd D:\Projects\mattmes\mattmes
+mvn clean install -DskipTests
+mvn spring-boot:run -pl mattmes-web
+```
+
+
+
+```bash
 # 类型检查 + 生产构建
 npm run build
 
@@ -32,6 +41,14 @@ npm run test:run
 # 测试覆盖率
 npm run test:coverage
 ```
+
+## e2e 端到端测试
+
+- 配置：`e2e.config.ts`（web 引擎指向 `http://localhost:3000`，可用 `APP_URL` 覆盖）
+- 用例：`tests/**/*.e2e.ts`；产物：`.e2e/`（已 gitignore）
+- 登录凭据：`credentials.admin`，密码取 `E2E_ADMIN_PASSWORD`（默认 `Admin@123`）
+- 技能与使用说明：`../.opencode/skills/e2e/`（先读 `PROJECT.md`）
+- 实时探查页面：opencode 的 `e2e` MCP 服务器（`npx e2e mcp`）
 
 ## 架构概览
 

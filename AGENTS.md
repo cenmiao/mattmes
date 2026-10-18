@@ -57,6 +57,18 @@ Matt MES管理系统 - 离散制造执行系统,采用前后端分离架构:
 ### 自动化测试
 - 测试方式1：测试后端接口； 启动后端，直接调用接口进行测试，使用永久token：eyJhbGciOiJIUzM4NCJ9.eyJ1c2VyTm8iOiJhZG1pbiIsInVzZXJJZCI6MSwiaWF0IjoxNzgwNDg2OTEyLCJleHAiOjE4MTIwMjI5MTJ9.be7sM94QmpqKrkr3iYWMRkROzaKyb-LGZNF3SW93VPzSzjEEjJy06zbOCeOjsTGK
 - 测试方式2：测试前端/前后端联调；使用playwright-cli技能自动登录进行测试
+- 测试方式3：可回归的端到端用例；使用 e2e 技能（e2e-tester-army）
+
+### e2e 端到端测试
+
+仓库已集成 [tester-army/e2e](https://github.com/tester-army/e2e)，项目根目录是 `mattmes-ui/`（不是仓库根目录）。
+
+- 技能：`.opencode/skills/e2e/SKILL.md`，本项目专属说明见 `.opencode/skills/e2e/PROJECT.md`（使用该技能前先读）
+- MCP：`opencode.json` 中注册了 `e2e` 服务器（`npx e2e mcp`，cwd=`mattmes-ui`），用于实时观察页面、校验 locator、截图/录屏
+- 配置：`mattmes-ui/e2e.config.ts`；用例：`mattmes-ui/tests/**/*.e2e.ts`；产物：`mattmes-ui/.e2e/`
+- 命令（在 `mattmes-ui` 下执行）：`npx e2e list`、`npx e2e run tests/<file>.e2e.ts`、`npx e2e run --headed`
+- 前置：先启动前端 `http://localhost:3000`（后端 8080 按需），否则 `APP_UNREACHABLE`
+- 登录凭据：配置内 `credentials.admin`，密码取环境变量 `E2E_ADMIN_PASSWORD`（默认 `Admin@123`），用例中通过 `credentials.user('admin').password` 传入，不要写进测试代码
 
 
 ## 领域知识

@@ -9,22 +9,25 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "e2e run"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.1.9",
     "axios": "^1.5.0",
-    "element-plus": "^2.3.12",
+    "element-plus": "^2.14.7",
     "pinia": "^2.1.6",
     "vue": "^3.5.34",
     "vue-router": "^4.2.4"
   },
   "devDependencies": {
+    "@e2e-dev/web": "^0.15.2",
     "@types/node": "^24.12.3",
     "@vitejs/plugin-vue": "^6.0.6",
     "@vitest/coverage-v8": "^4.1.7",
     "@vue/test-utils": "^2.4.10",
     "@vue/tsconfig": "^0.9.1",
+    "e2e": "^0.21.2",
     "happy-dom": "^20.9.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.12",
