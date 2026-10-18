@@ -3,6 +3,7 @@ package com.matt.mes.business.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.matt.mes.business.dto.LineAddRequest;
+import com.matt.mes.business.dto.LineEditRequest;
 import com.matt.mes.business.dto.LinePageResult;
 import com.matt.mes.business.dto.LineQueryRequest;
 import com.matt.mes.business.dto.LineResponse;
@@ -124,6 +125,48 @@ public class LineServiceImpl implements LineService {
         line.setDescription(request.getDescription());
         line.setEnable(enable);
         lineMapper.insert(line);
+
+        return line.getId();
+    }
+
+    @Override
+    public Long edit(LineEditRequest request) {
+        // 1. 校验 ID 是否存在，不存在时返回业务错误而非系统异常
+        if (request.getId() == null) {
+            throw new BusinessException(400, "线体ID不能为空");
+        }
+        MesLine line = lineMapper.selectById(request.getId());
+        if (line == null) {
+            throw new BusinessException(400, "线体不存在");
+        }
+
+        // 2. 名称必填（空或纯空白均不允许），与新增规则一致
+        String name = request.getName() == null ? null : request.getName().trim();
+        if (name == null || name.isEmpty()) {
+            throw new BusinessException(400, "线体名称不能为空");
+        }
+
+        // 3. 长度校验
+        if (name.length() > NAME_MAX_LENGTH) {
+            throw new BusinessException(400, "线体名称长度不能超过100个字符");
+        }
+
+        // 4. 描述长度校验
+        if (request.getDescription() != null && request.getDescription().length() > DESCRIPTION_MAX_LENGTH) {
+            throw new BusinessException(400, "描述长度不能超过500个字符");
+        }
+
+        // 5. 状态值校验（未传则保留原状态）
+        Integer enable = request.getEnable() == null ? line.getEnable() : request.getEnable();
+        if (enable != 0 && enable != 1) {
+            throw new BusinessException(400, "启用状态值无效");
+        }
+
+        // 6. 只更新可变字段：编码 lineCode 不在编辑请求中，保持原值不变
+        line.setLineName(name);
+        line.setDescription(request.getDescription());
+        line.setEnable(enable);
+        lineMapper.updateById(line);
 
         return line.getId();
     }

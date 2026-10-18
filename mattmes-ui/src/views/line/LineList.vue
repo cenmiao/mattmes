@@ -75,8 +75,15 @@
         <el-table-column prop="createdBy" label="创建人" width="120" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="120" fixed="right">
-          <template #default>
-            <span class="action-placeholder">—</span>
+          <template #default="{ row }">
+            <el-button
+              type="primary"
+              link
+              @click="handleEdit(row)"
+              v-permission="'line:edit'"
+            >
+              编辑
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -147,12 +154,62 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 编辑弹窗 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑线体"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <el-form
+        ref="editFormRef"
+        :model="editForm"
+        :rules="editFormRules"
+        label-width="100px"
+      >
+        <el-form-item label="线体编码">
+          <!-- 编码是业务唯一标识，编辑时只读展示且不随请求提交 -->
+          <el-input v-model="editForm.code" disabled placeholder="请输入线体编码" />
+        </el-form-item>
+        <el-form-item label="线体名称" prop="name">
+          <el-input
+            v-model="editForm.name"
+            placeholder="请输入线体名称"
+            maxlength="100"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="启用状态" prop="enable">
+          <el-radio-group v-model="editForm.enable">
+            <el-radio :value="1">启用</el-radio>
+            <el-radio :value="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input
+            v-model="editForm.description"
+            type="textarea"
+            :rows="3"
+            maxlength="500"
+            show-word-limit
+            placeholder="请输入描述"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSubmitEdit" :loading="editSubmitLoading">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { queryLineList, addLine, type LineQueryRequest, type LineResponse, type LineAddRequest } from '@/api/line'
+import { queryLineList, addLine, editLine, type LineQueryRequest, type LineResponse, type LineAddRequest } from '@/api/line'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -214,6 +271,31 @@ const addFormRules: FormRules = {
     { max: 50, message: '线体编码长度不能超过50个字符', trigger: 'blur' },
     { validator: validateCode, trigger: 'blur' }
   ],
+  name: [
+    { required: true, message: '请输入线体名称', trigger: 'blur' },
+    { max: 100, message: '线体名称长度不能超过100个字符', trigger: 'blur' },
+    { validator: validateName, trigger: 'blur' }
+  ],
+  description: [
+    { max: 500, message: '描述长度不能超过500个字符', trigger: 'blur' }
+  ]
+}
+
+// 编辑弹窗
+const editDialogVisible = ref(false)
+const editFormRef = ref<FormInstance>()
+const editSubmitLoading = ref(false)
+const editForm = reactive({
+  id: 0,
+  // 编码仅用于只读展示，不会随编辑请求提交
+  code: '',
+  name: '',
+  description: '',
+  enable: 1
+})
+
+// 编辑表单校验规则：编码不可修改，故不校验也不提交编码
+const editFormRules: FormRules = {
   name: [
     { required: true, message: '请输入线体名称', trigger: 'blur' },
     { max: 100, message: '线体名称长度不能超过100个字符', trigger: 'blur' },
@@ -294,6 +376,49 @@ const handleSubmitAdd = async () => {
   }
 }
 
+// 打开编辑弹窗：预填当前行的名称、描述与状态（编码只读展示）
+const handleEdit = (row: LineResponse) => {
+  editForm.id = row.id
+  editForm.code = row.code
+  editForm.name = row.name
+  editForm.description = row.description ?? ''
+  editForm.enable = row.enable
+  editFormRef.value?.clearValidate()
+  editDialogVisible.value = true
+}
+
+// 提交编辑
+const handleSubmitEdit = async () => {
+  if (!editFormRef.value) return
+  // 校验不通过（前端规则：名称必填与长度）时不发起请求
+  let valid = false
+  try {
+    valid = await editFormRef.value.validate()
+  } catch {
+    valid = false
+  }
+  if (!valid) return
+
+  editSubmitLoading.value = true
+  try {
+    // 编码不在请求体中：编码是业务唯一标识，编辑时不可修改
+    await editLine({
+      id: editForm.id,
+      name: editForm.name.trim(),
+      description: editForm.description,
+      enable: editForm.enable
+    })
+    ElMessage.success('编辑线体成功')
+    editDialogVisible.value = false
+    // 刷新列表，确保更新后的名称、描述与状态立即可见
+    handleQuery()
+  } catch (error: any) {
+    ElMessage.error(error.message || '编辑线体失败')
+  } finally {
+    editSubmitLoading.value = false
+  }
+}
+
 // 初始化
 onMounted(() => {
   handleQuery()
@@ -307,9 +432,5 @@ onMounted(() => {
 
 .query-card {
   margin-bottom: 20px;
-}
-
-.action-placeholder {
-  color: var(--content-c4);
 }
 </style>

@@ -47,6 +47,18 @@ export interface LineAddRequest {
 }
 
 /**
+ * 线体编辑请求参数
+ *
+ * 不含编码字段：线体编码是业务唯一标识，创建后不可修改。
+ */
+export interface LineEditRequest {
+  id: number
+  name: string
+  description?: string
+  enable?: number
+}
+
+/**
  * 查询线体列表
  */
 export function queryLineList(params: LineQueryRequest) {
@@ -64,6 +76,17 @@ export function addLine(data: LineAddRequest) {
   return request<number>({
     url: '/line/add',
     method: 'post',
+    data
+  })
+}
+
+/**
+ * 编辑线体（编码不可修改）
+ */
+export function editLine(data: LineEditRequest) {
+  return request<number>({
+    url: '/line/edit',
+    method: 'put',
     data
   })
 }
