@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { queryLineList, addLine, updateLineStatus } from '@/api/line'
+import { queryLineList, addLine, updateLineStatus, exportLine } from '@/api/line'
 
 // Mock 整个 request 模块
 vi.mock('@/utils/request', () => ({
@@ -47,6 +47,21 @@ describe('Line API', () => {
       url: '/line/status/7',
       method: 'put',
       params: { enable: 0 }
+    })
+  })
+
+  it('exportLine 应以 blob 方式请求 GET /line/export 并透传筛选条件', async () => {
+    const blob = new Blob(['\uFEFFID'], { type: 'text/csv;charset=UTF-8' })
+    vi.mocked(request).mockResolvedValue(blob)
+
+    const result = await exportLine({ code: 'L1', name: '一号线', enable: 1 })
+
+    expect(result).toBe(blob)
+    expect(request).toHaveBeenCalledWith({
+      url: '/line/export',
+      method: 'get',
+      params: { code: 'L1', name: '一号线', enable: 1 },
+      responseType: 'blob'
     })
   })
 })

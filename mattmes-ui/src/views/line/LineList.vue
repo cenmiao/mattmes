@@ -46,6 +46,10 @@
             <el-icon><Plus /></el-icon>
             新增
           </el-button>
+          <el-button type="warning" @click="handleExport" v-permission="'line:export'">
+            <el-icon><Download /></el-icon>
+            导出
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -214,8 +218,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { queryLineList, addLine, editLine, updateLineStatus, type LineQueryRequest, type LineResponse, type LineAddRequest } from '@/api/line'
-import { Search, Refresh, Plus } from '@element-plus/icons-vue'
+import { queryLineList, addLine, editLine, updateLineStatus, exportLine, type LineQueryRequest, type LineResponse, type LineAddRequest } from '@/api/line'
+import { Search, Refresh, Plus, Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -446,6 +450,36 @@ const handleSubmitEdit = async () => {
   } finally {
     editSubmitLoading.value = false
   }
+}
+
+// 按当前筛选条件导出 CSV：服务端一次性导出全部匹配记录（与分页无关）
+const handleExport = async () => {
+  try {
+    const blob = await exportLine({
+      code: queryParams.code,
+      name: queryParams.name,
+      enable: queryParams.enable
+    })
+
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    // 文件名与服务端 Content-Disposition 保持一致：线体数据_yyyyMMdd_HHmmss.csv
+    link.download = `线体数据_${formatExportTimestamp(new Date())}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (error: any) {
+    ElMessage.error(error?.message || '导出失败')
+  }
+}
+
+// 生成与服务端相同格式的时间戳 yyyyMMdd_HHmmss
+const formatExportTimestamp = (now: Date) => {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
 }
 
 // 初始化

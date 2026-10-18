@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -492,7 +493,143 @@ class LineControllerTest {
         org.junit.jupiter.api.Assertions.assertEquals(1, unchanged.getEnable());
     }
 
+    // ========== 导出 CSV ==========
+
+    @Test
+    @DisplayName("GET /api/line/export 响应体以 UTF-8 BOM 开头，表头为 7 列")
+    void shouldExportCsvWithBomAndSevenColumnHeader() throws Exception {
+        insertTestLine("LINE-EXP-BOM", "导出线体", 1, 0);
+
+        byte[] body = mockMvc.perform(get("/api/line/export")
+                        .header("Authorization", AUTH)
+                        .param("code", "LINE-EXP-BOM"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        // 前三个字节必须是 UTF-8 BOM (EF BB BF)
+        org.junit.jupiter.api.Assertions.assertTrue(body.length > 3);
+        org.junit.jupiter.api.Assertions.assertEquals((byte) 0xEF, body[0]);
+        org.junit.jupiter.api.Assertions.assertEquals((byte) 0xBB, body[1]);
+        org.junit.jupiter.api.Assertions.assertEquals((byte) 0xBF, body[2]);
+
+        String csv = new String(body, java.nio.charset.StandardCharsets.UTF_8);
+        String header = csv.substring(1).split("\r\n", -1)[0];
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "ID,线体编码,线体名称,描述,启用状态,创建人,创建时间", header);
+    }
+
+    @Test
+    @DisplayName("GET /api/line/export 返回 text/csv 内容类型与 attachment 文件名")
+    void shouldExportWithCsvContentTypeAndAttachmentFileName() throws Exception {
+        mockMvc.perform(get("/api/line/export")
+                        .header("Authorization", AUTH))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("text/csv")))
+                .andExpect(header().string("Content-Type", containsString("UTF-8")))
+                .andExpect(header().string("Content-Disposition", startsWith("attachment;")));
+    }
+
+    @Test
+    @DisplayName("GET /api/line/export 描述含逗号、双引号或换行时正确转义，解析后仍为 7 列")
+    void shouldEscapeSpecialCharactersInExportedDescription() throws Exception {
+        String description = "含逗号,含\"双引号\"，含换行\n第二行";
+        MesLine line = new MesLine();
+        line.setLineCode("LINE-EXP-ESC");
+        line.setLineName("转义线体");
+        line.setDescription(description);
+        line.setEnable(0);
+        lineMapper.insert(line);
+
+        byte[] body = mockMvc.perform(get("/api/line/export")
+                        .header("Authorization", AUTH)
+                        .param("code", "LINE-EXP-ESC"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        String csv = new String(body, java.nio.charset.StandardCharsets.UTF_8).substring(1);
+        // 原始文本中描述须整体被双引号包裹，内部双引号成对转义
+        org.junit.jupiter.api.Assertions.assertTrue(
+                csv.contains("\"含逗号,含\"\"双引号\"\"，含换行\n第二行\""));
+
+        // 逐字符解析后列数仍为 7，且描述原样还原
+        java.util.List<java.util.List<String>> records = parseCsv(csv);
+        org.junit.jupiter.api.Assertions.assertEquals(2, records.size());
+        java.util.List<String> row = records.get(1);
+        org.junit.jupiter.api.Assertions.assertEquals(7, row.size());
+        org.junit.jupiter.api.Assertions.assertEquals(description, row.get(3));
+        org.junit.jupiter.api.Assertions.assertEquals("0", row.get(4));
+    }
+
+    @Test
+    @DisplayName("GET /api/line/export 导出全部匹配记录，不受分页参数影响")
+    void shouldExportAllMatchingRecordsIgnoringPaging() throws Exception {
+        for (int i = 1; i <= 11; i++) {
+            insertTestLine(String.format("LINE-EXP-ALL-%02d", i), "全量线体" + i, 1, 0);
+        }
+
+        byte[] body = mockMvc.perform(get("/api/line/export")
+                        .header("Authorization", AUTH)
+                        .param("code", "LINE-EXP-ALL-")
+                        .param("pageNum", "1")
+                        .param("pageSize", "10"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray();
+
+        String csv = new String(body, java.nio.charset.StandardCharsets.UTF_8).substring(1);
+        org.junit.jupiter.api.Assertions.assertEquals(12, csv.split("\r\n").length);
+    }
+
     // ========== 辅助方法 ==========
+
+    /**
+     * 按 RFC 4180 解析 CSV（支持引号包裹的逗号与换行）
+     */
+    private java.util.List<java.util.List<String>> parseCsv(String csv) {
+        java.util.List<java.util.List<String>> records = new java.util.ArrayList<>();
+        java.util.List<String> fields = new java.util.ArrayList<>();
+        StringBuilder field = new StringBuilder();
+        boolean inQuotes = false;
+
+        for (int i = 0; i < csv.length(); i++) {
+            char c = csv.charAt(i);
+            if (inQuotes) {
+                if (c == '"') {
+                    if (i + 1 < csv.length() && csv.charAt(i + 1) == '"') {
+                        field.append('"');
+                        i++;
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    field.append(c);
+                }
+            } else if (c == '"') {
+                inQuotes = true;
+            } else if (c == ',') {
+                fields.add(field.toString());
+                field.setLength(0);
+            } else if (c == '\r' && i + 1 < csv.length() && csv.charAt(i + 1) == '\n') {
+                fields.add(field.toString());
+                field.setLength(0);
+                records.add(fields);
+                fields = new java.util.ArrayList<>();
+                i++;
+            } else if (c == '\n') {
+                fields.add(field.toString());
+                field.setLength(0);
+                records.add(fields);
+                fields = new java.util.ArrayList<>();
+            } else {
+                field.append(c);
+            }
+        }
+        if (field.length() > 0 || !fields.isEmpty()) {
+            fields.add(field.toString());
+            records.add(fields);
+        }
+        return records;
+    }
+
 
     /**
      * 断言编辑请求被业务校验拒绝：HTTP 200 + JSON code 400 + 指定提示

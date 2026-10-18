@@ -11,9 +11,16 @@ import com.matt.mes.business.entity.MesLine;
 import com.matt.mes.business.mapper.LineMapper;
 import com.matt.mes.business.service.LineService;
 import com.matt.mes.common.exception.BusinessException;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -37,11 +44,32 @@ public class LineServiceImpl implements LineService {
     /** 描述最大长度 */
     private static final int DESCRIPTION_MAX_LENGTH = 500;
 
+    /** UTF-8 BOM：让 Excel 以 UTF-8 解析导出文件，避免中文乱码 */
+    private static final String UTF8_BOM = "\uFEFF";
+
     private final LineMapper lineMapper;
 
     @Override
     public LinePageResult<LineResponse> page(LineQueryRequest request) {
         // 1. 构建查询条件
+        LambdaQueryWrapper<MesLine> queryWrapper = buildQueryWrapper(request);
+
+        // 2. 执行分页查询
+        Page<MesLine> page = new Page<>(request.getPageNum(), request.getPageSize());
+        lineMapper.selectPage(page, queryWrapper);
+
+        // 3. 转换为响应DTO
+        List<LineResponse> lineResponses = page.getRecords().stream()
+                .map(this::convertToLineResponse)
+                .collect(Collectors.toList());
+
+        return new LinePageResult<>(lineResponses, page.getTotal(), request.getPageNum(), request.getPageSize());
+    }
+
+    /**
+     * 构建线体查询条件（列表与导出共用，保证两者所见数据一致）
+     */
+    private LambdaQueryWrapper<MesLine> buildQueryWrapper(LineQueryRequest request) {
         LambdaQueryWrapper<MesLine> queryWrapper = new LambdaQueryWrapper<>();
 
         // 编码模糊查询
@@ -62,16 +90,7 @@ public class LineServiceImpl implements LineService {
         // 按 ID 降序排序
         queryWrapper.orderByDesc(MesLine::getId);
 
-        // 2. 执行分页查询
-        Page<MesLine> page = new Page<>(request.getPageNum(), request.getPageSize());
-        lineMapper.selectPage(page, queryWrapper);
-
-        // 3. 转换为响应DTO
-        List<LineResponse> lineResponses = page.getRecords().stream()
-                .map(this::convertToLineResponse)
-                .collect(Collectors.toList());
-
-        return new LinePageResult<>(lineResponses, page.getTotal(), request.getPageNum(), request.getPageSize());
+        return queryWrapper;
     }
 
     @Override
@@ -189,6 +208,70 @@ public class LineServiceImpl implements LineService {
         lineMapper.updateById(line);
 
         return line.getId();
+    }
+
+    @Override
+    public void export(LineQueryRequest request, HttpServletResponse response) {
+        // 1. 查询全部符合条件的数据（不分页，导出的是当前筛选下的全量记录）
+        List<MesLine> lineList = lineMapper.selectList(buildQueryWrapper(request));
+
+        // 2. 写入响应头
+        try {
+            String fileName = generateExportFileName();
+            response.setContentType("text/csv;charset=UTF-8");
+            // URLEncoder 以表单编码处理空格（+），在 Content-Disposition 中须还原为 %20
+            String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+            response.setHeader("Content-Disposition", "attachment;filename=" + encodedFileName);
+            response.setCharacterEncoding("UTF-8");
+
+            // 3. 写入 BOM + 表头 + 数据行
+            //    BOM 必须写在最前面，否则 Excel 以本地编码解析，中文单元格会乱码
+            StringBuilder csv = new StringBuilder();
+            csv.append(UTF8_BOM);
+            csv.append("ID,线体编码,线体名称,描述,启用状态,创建人,创建时间\r\n");
+
+            for (MesLine line : lineList) {
+                csv.append(line.getId()).append(',');
+                csv.append(escapeCsvField(line.getLineCode())).append(',');
+                csv.append(escapeCsvField(line.getLineName())).append(',');
+                csv.append(escapeCsvField(line.getDescription())).append(',');
+                // 状态列导出原始值 1/0，不转换为中文，便于离线过滤与统计
+                csv.append(line.getEnable()).append(',');
+                csv.append(escapeCsvField(line.getCreatedBy())).append(',');
+                csv.append(line.getCreateTime() != null ? line.getCreateTime().toString() : "");
+                csv.append("\r\n");
+            }
+
+            // 4. 按 UTF-8 字节写出（显式指定字符集，避免容器默认编码干扰 BOM 与中文）
+            byte[] bytes = csv.toString().getBytes(StandardCharsets.UTF_8);
+            response.setContentLength(bytes.length);
+            OutputStream outputStream = response.getOutputStream();
+            outputStream.write(bytes);
+            outputStream.flush();
+        } catch (IOException e) {
+            throw new BusinessException(500, "导出文件失败");
+        }
+    }
+
+    /**
+     * 生成导出文件名：线体数据_yyyyMMdd_HHmmss.csv
+     */
+    private String generateExportFileName() {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        return "线体数据_" + timestamp + ".csv";
+    }
+
+    /**
+     * 转义 CSV 字段：含逗号、双引号、换行或回车时整体加引号包裹，内部双引号成对转义
+     */
+    private String escapeCsvField(String field) {
+        if (field == null) {
+            return "";
+        }
+        if (field.contains(",") || field.contains("\"") || field.contains("\n") || field.contains("\r")) {
+            return "\"" + field.replace("\"", "\"\"") + "\"";
+        }
+        return field;
     }
 
     /**

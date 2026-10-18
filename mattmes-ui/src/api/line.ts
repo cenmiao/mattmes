@@ -101,3 +101,18 @@ export function updateLineStatus(id: number, enable: number) {
     params: { enable }
   })
 }
+
+/**
+ * 导出线体数据为 CSV
+ *
+ * 以 blob 方式接收（响应拦截器对 responseType=blob 直接返回原始数据），
+ * 查询条件与列表一致，服务端一次性导出全部匹配记录。
+ */
+export function exportLine(params: LineQueryRequest) {
+  return request<Blob>({
+    url: '/line/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}

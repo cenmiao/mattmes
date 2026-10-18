@@ -5,6 +5,7 @@ import com.matt.mes.business.dto.LineEditRequest;
 import com.matt.mes.business.dto.LinePageResult;
 import com.matt.mes.business.dto.LineQueryRequest;
 import com.matt.mes.business.dto.LineResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * 线体服务接口
@@ -41,4 +42,15 @@ public interface LineService {
      * @return 该线体ID
      */
     Long updateStatus(Long id, Integer enable);
+
+    /**
+     * 按查询条件导出线体数据为 CSV
+     *
+     * <p>一次性导出全部匹配记录（不受分页限制）。响应体以 UTF-8 BOM 开头，
+     * 保证 Excel 直接打开中文不乱码。</p>
+     *
+     * @param request  查询条件（与列表查询一致，忽略分页参数）
+     * @param response HTTP 响应
+     */
+    void export(LineQueryRequest request, HttpServletResponse response);
 }
