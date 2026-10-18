@@ -7,7 +7,8 @@ import {
   Document,
   Setting,
   FolderOpened,
-  Box
+  Box,
+  Connection
 } from '@element-plus/icons-vue'
 
 export interface MenuItem {
@@ -63,5 +64,11 @@ export const menus: MenuItem[] = [
     title: '料号管理',
     icon: Box,
     permission: 'material:read'
+  },
+  {
+    path: '/lines',
+    title: '线体管理',
+    icon: Connection,
+    permission: 'line:read'
   }
 ]

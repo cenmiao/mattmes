@@ -1,0 +1,48 @@
+import { request } from '@/utils/request'
+
+/**
+ * 线体查询请求参数
+ */
+export interface LineQueryRequest {
+  code?: string
+  name?: string
+  enable?: number
+  pageNum?: number
+  pageSize?: number
+}
+
+/**
+ * 线体响应数据
+ */
+export interface LineResponse {
+  id: number
+  code: string
+  name: string
+  description?: string
+  enable: number
+  createdBy?: string
+  createTime?: string
+  updatedBy?: string
+  updateTime?: string
+}
+
+/**
+ * 分页结果
+ */
+export interface LinePageResult {
+  list: LineResponse[]
+  total: number
+  pageNum: number
+  pageSize: number
+}
+
+/**
+ * 查询线体列表
+ */
+export function queryLineList(params: LineQueryRequest) {
+  return request<LinePageResult>({
+    url: '/line/list',
+    method: 'post',
+    data: params
+  })
+}
