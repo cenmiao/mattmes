@@ -2,6 +2,7 @@ package com.matt.mes.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.matt.mes.business.dto.LineAddRequest;
+import com.matt.mes.business.dto.LineEditRequest;
 import com.matt.mes.business.dto.LineQueryRequest;
 import com.matt.mes.business.entity.MesLine;
 import com.matt.mes.business.mapper.LineMapper;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -273,7 +275,180 @@ class LineControllerTest {
         expectAddRejected(request, "启用状态值无效");
     }
 
+    // ========== 编辑成功 ==========
+
+    @Test
+    @DisplayName("PUT /api/line/edit 编辑名称、描述与状态成功并返回被编辑的ID")
+    void shouldEditLineSuccessfully() throws Exception {
+        Long id = insertTestLine("LINE-EDIT-001", "旧名称", 1, 0);
+
+        LineEditRequest request = new LineEditRequest();
+        request.setId(id);
+        request.setName("新名称");
+        request.setDescription("新的描述");
+        request.setEnable(0);
+
+        mockMvc.perform(put("/api/line/edit")
+                        .header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(id));
+
+        // 列表查询可见更新后的名称、描述与状态
+        LineQueryRequest query = new LineQueryRequest();
+        query.setCode("LINE-EDIT-001");
+
+        mockMvc.perform(post("/api/line/list")
+                        .header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(query)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list", hasSize(1)))
+                .andExpect(jsonPath("$.data.list[0].name").value("新名称"))
+                .andExpect(jsonPath("$.data.list[0].description").value("新的描述"))
+                .andExpect(jsonPath("$.data.list[0].enable").value(0));
+    }
+
+    // ========== 编码不可修改 ==========
+
+    @Test
+    @DisplayName("编辑请求体携带编码字段时不会被持久化")
+    void shouldIgnoreCodeWhenEditing() throws Exception {
+        Long id = insertTestLine("LINE-KEEP-CODE", "原始名称", 1, 0);
+
+        // 以原始 JSON 方式传入 code，验证该字段被忽略
+        String body = "{\"id\":" + id + ",\"code\":\"LINE-HACKED\",\"name\":\"改名后\",\"enable\":1}";
+
+        mockMvc.perform(put("/api/line/edit")
+                        .header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200));
+
+        MesLine updated = lineMapper.selectById(id);
+        org.junit.jupiter.api.Assertions.assertEquals("LINE-KEEP-CODE", updated.getLineCode());
+        org.junit.jupiter.api.Assertions.assertEquals("改名后", updated.getLineName());
+    }
+
+    // ========== 不变更 ID 校验 ==========
+
+    @Test
+    @DisplayName("编辑不存在的 ID 返回 400 与明确提示，不抛系统异常")
+    void shouldRejectEditOfMissingId() throws Exception {
+        LineEditRequest request = new LineEditRequest();
+        request.setId(-1L);
+        request.setName("不存在的线体");
+        request.setEnable(1);
+
+        mockMvc.perform(put("/api/line/edit")
+                        .header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("线体不存在"));
+    }
+
+    @Test
+    @DisplayName("编辑时 ID 缺失返回 400 而非系统异常")
+    void shouldRejectEditWithoutId() throws Exception {
+        LineEditRequest request = new LineEditRequest();
+        request.setName("缺少ID");
+        request.setEnable(1);
+
+        mockMvc.perform(put("/api/line/edit")
+                        .header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("线体ID不能为空"));
+    }
+
+    // ========== 编辑校验 ==========
+
+    @Test
+    @DisplayName("编辑时名称为空返回 400")
+    void shouldRejectBlankNameWhenEditing() throws Exception {
+        Long id = insertTestLine("LINE-EDIT-NO-NAME", "原名称", 1, 0);
+
+        LineEditRequest request = new LineEditRequest();
+        request.setId(id);
+        request.setName("");
+
+        expectEditRejected(request, "线体名称不能为空");
+    }
+
+    @Test
+    @DisplayName("编辑时名称为纯空白返回 400")
+    void shouldRejectWhitespaceNameWhenEditing() throws Exception {
+        Long id = insertTestLine("LINE-EDIT-BLANK-NAME", "原名称", 1, 0);
+
+        LineEditRequest request = new LineEditRequest();
+        request.setId(id);
+        request.setName("  \t ");
+
+        expectEditRejected(request, "线体名称不能为空");
+    }
+
+    @Test
+    @DisplayName("编辑时名称长度超过 100 返回 400")
+    void shouldRejectTooLongNameWhenEditing() throws Exception {
+        Long id = insertTestLine("LINE-EDIT-LONG-NAME", "原名称", 1, 0);
+
+        LineEditRequest request = new LineEditRequest();
+        request.setId(id);
+        request.setName("名".repeat(101));
+
+        expectEditRejected(request, "线体名称长度不能超过100个字符");
+    }
+
+    @Test
+    @DisplayName("编辑时状态值非法返回 400")
+    void shouldRejectInvalidEnableWhenEditing() throws Exception {
+        Long id = insertTestLine("LINE-EDIT-BAD-ENABLE", "原名称", 1, 0);
+
+        LineEditRequest request = new LineEditRequest();
+        request.setId(id);
+        request.setName("合法名称");
+        request.setEnable(2);
+
+        expectEditRejected(request, "启用状态值无效");
+    }
+
+    @Test
+    @DisplayName("编辑校验失败时原记录保持不变")
+    void shouldKeepRecordUnchangedWhenEditRejected() throws Exception {
+        Long id = insertTestLine("LINE-EDIT-UNCHANGED", "原名称", 1, 0);
+
+        LineEditRequest request = new LineEditRequest();
+        request.setId(id);
+        request.setName("");
+
+        expectEditRejected(request, "线体名称不能为空");
+
+        MesLine unchanged = lineMapper.selectById(id);
+        org.junit.jupiter.api.Assertions.assertEquals("原名称", unchanged.getLineName());
+        org.junit.jupiter.api.Assertions.assertEquals(1, unchanged.getEnable());
+    }
+
     // ========== 辅助方法 ==========
+
+    /**
+     * 断言编辑请求被业务校验拒绝：HTTP 200 + JSON code 400 + 指定提示
+     */
+    private void expectEditRejected(LineEditRequest request, String expectedMessage) throws Exception {
+        mockMvc.perform(put("/api/line/edit")
+                        .header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value(expectedMessage));
+    }
 
     /**
      * 断言新增请求被业务校验拒绝：HTTP 200 + JSON code 400 + 指定提示
@@ -289,14 +464,15 @@ class LineControllerTest {
     }
 
     /**
-     * 辅助方法：插入测试线体
+     * 辅助方法：插入测试线体，返回新记录ID
      */
-    private void insertTestLine(String code, String name, Integer enable, Integer deleted) {
+    private Long insertTestLine(String code, String name, Integer enable, Integer deleted) {
         MesLine line = new MesLine();
         line.setLineCode(code);
         line.setLineName(name);
         line.setEnable(enable);
         line.setDeleted(deleted);
         lineMapper.insert(line);
+        return line.getId();
     }
 }
