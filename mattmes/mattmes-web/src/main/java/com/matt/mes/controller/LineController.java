@@ -7,6 +7,7 @@ import com.matt.mes.business.dto.LineQueryRequest;
 import com.matt.mes.business.dto.LineResponse;
 import com.matt.mes.business.service.LineService;
 import com.matt.mes.common.result.Result;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -74,5 +75,15 @@ public class LineController {
     public Result<List<Long>> batchDelete(@RequestBody List<Long> ids) {
         List<Long> deletedIds = lineService.batchDelete(ids);
         return Result.success("批量删除线体成功", deletedIds);
+    }
+
+    /**
+     * 导出线体数据为 CSV
+     *
+     * <p>查询条件与列表一致，一次性导出全部匹配记录；响应体以 UTF-8 BOM 开头。</p>
+     */
+    @GetMapping("/export")
+    public void export(LineQueryRequest request, HttpServletResponse response) {
+        lineService.export(request, response);
     }
 }

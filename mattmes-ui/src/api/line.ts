@@ -122,3 +122,28 @@ export function batchDeleteLines(ids: number[]) {
     data: ids
   })
 }
+
+/**
+ * 文件下载响应
+ *
+ * request 的 blob 分支会透传响应头，页面可据 `content-disposition`
+ * 还原服务端生成的文件名，保证下载文件名与响应头一致。
+ */
+export interface LineExportResponse {
+  data: Blob
+  headers: Record<string, string | undefined>
+}
+
+/**
+ * 导出线体数据为 CSV
+ *
+ * 以 blob 方式接收，查询条件与列表一致，服务端一次性导出全部匹配记录。
+ */
+export function exportLine(params: LineQueryRequest) {
+  return request<LineExportResponse>({
+    url: '/line/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
