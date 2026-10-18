@@ -384,8 +384,4 @@ onMounted(() => {
 .query-card {
   margin-bottom: 20px;
 }
-
-.action-placeholder {
-  color: var(--content-c4);
-}
 </style>

@@ -160,9 +160,9 @@ public class LineServiceImpl implements LineService {
             }
         }
 
-        // 3. 统一逻辑删除
+        // 3. 统一逻辑删除（行数与入参不一致说明校验后被并发改动，按失败处理）
         int rows = lineMapper.deleteBatchIds(ids);
-        if (rows == 0) {
+        if (rows != ids.size()) {
             throw new BusinessException(500, "批量删除线体失败");
         }
 
