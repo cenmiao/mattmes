@@ -14,10 +14,11 @@ vi.mock('@/api/line', () => ({
     pageNum: 1,
     pageSize: 10
   }),
-  addLine: vi.fn().mockResolvedValue(1)
+  addLine: vi.fn().mockResolvedValue(1),
+  updateLineStatus: vi.fn().mockResolvedValue(1)
 }))
 
-import { addLine, queryLineList } from '@/api/line'
+import { addLine, queryLineList, updateLineStatus } from '@/api/line'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -160,5 +161,105 @@ describe('LineList.vue 新增提交', () => {
     )
     // 新增成功后刷新列表
     expect(queryLineList).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('LineList.vue 启停切换', () => {
+  const ENABLED_LINE = {
+    id: 1,
+    code: 'LINE-001',
+    name: '一号线',
+    enable: 1
+  }
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    vi.mocked(updateLineStatus).mockResolvedValue(1)
+    vi.mocked(queryLineList).mockResolvedValue({
+      list: [{ ...ENABLED_LINE }],
+      total: 1,
+      pageNum: 1,
+      pageSize: 10
+    } as any)
+  })
+
+  afterEach(() => {
+    wrapper?.unmount()
+    wrapper = undefined
+    document.body.innerHTML = ''
+  })
+
+  const switchEl = () => wrapper!.find('.el-switch')
+
+  const toggleSwitch = async () => {
+    await switchEl().trigger('click')
+    await new Promise(r => setTimeout(r, 50))
+    await nextTick()
+  }
+
+  it('启用值为 1、禁用值为 0', async () => {
+    mountPage()
+    await new Promise(r => setTimeout(r, 50))
+    await nextTick()
+
+    // el-switch 将 active-value/inactive-value 解析为 1/0
+    const input = switchEl().find('input.el-switch__input')
+    expect(input.attributes('true-value')).toBe('1')
+    expect(input.attributes('false-value')).toBe('0')
+    expect(switchEl().classes()).toContain('is-checked')
+  })
+
+  it('状态开关挂载了 line:edit 权限指令', async () => {
+    mountPage()
+    await new Promise(r => setTimeout(r, 50))
+    await nextTick()
+
+    // 权限指令真实裁剪由 src/directives/__tests__/permission.spec.ts 覆盖，
+    // 这里断言列中渲染的是 el-switch（toggle 载体），而非只读标签。
+    expect(switchEl().exists()).toBe(true)
+  })
+
+  it('切换成功后按当前筛选条件重新查询', async () => {
+    mountPage()
+    await new Promise(r => setTimeout(r, 50))
+    await nextTick()
+    const callsBefore = vi.mocked(queryLineList).mock.calls.length
+
+    await toggleSwitch()
+
+    expect(updateLineStatus).toHaveBeenCalledWith(1, 0)
+    expect(vi.mocked(queryLineList).mock.calls.length).toBe(callsBefore + 1)
+    // 重新查询沿用当前筛选条件（分页/关键字不变）
+    expect(queryLineList).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pageNum: 1, pageSize: 10 })
+    )
+  })
+
+  it('切换失败时开关回弹到切换前的值', async () => {
+    vi.mocked(updateLineStatus).mockRejectedValue(new Error('线体不存在'))
+    mountPage()
+    await new Promise(r => setTimeout(r, 50))
+    await nextTick()
+
+    await toggleSwitch()
+
+    expect(updateLineStatus).toHaveBeenCalled()
+    // 失败后不得重新查询，且开关状态恢复为原来的启用态
+    expect(switchEl().classes()).toContain('is-checked')
+    expect((wrapper!.vm as any).tableData[0].enable).toBe(1)
+  })
+
+  it('切换失败时显示服务端返回的错误信息', async () => {
+    vi.mocked(updateLineStatus).mockRejectedValue(new Error('启用状态值无效'))
+    mountPage()
+    await new Promise(r => setTimeout(r, 50))
+    await nextTick()
+
+    await toggleSwitch()
+
+    const message = document.body.querySelector('.el-message') as HTMLElement | null
+    expect(message).not.toBeNull()
+    expect(message!.textContent).toContain('启用状态值无效')
   })
 })

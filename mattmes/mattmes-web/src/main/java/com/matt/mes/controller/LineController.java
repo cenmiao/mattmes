@@ -39,11 +39,21 @@ public class LineController {
     }
 
     /**
+    /**
      * 编辑线体（编码不可修改）
      */
     @PutMapping("/edit")
     public Result<Long> edit(@RequestBody LineEditRequest request) {
         Long id = lineService.edit(request);
         return Result.success("编辑线体成功", id);
+    }
+
+    /**
+     * 切换线体启用状态
+     */
+    @PutMapping("/status/{id}")
+    public Result<Long> updateStatus(@PathVariable Long id, @RequestParam Integer enable) {
+        Long lineId = lineService.updateStatus(id, enable);
+        return Result.success("状态更新成功", lineId);
     }
 }

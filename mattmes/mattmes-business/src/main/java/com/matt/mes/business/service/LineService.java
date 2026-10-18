@@ -25,10 +25,20 @@ public interface LineService {
     Long add(LineAddRequest request);
 
     /**
+    /**
      * 编辑线体（编码不可修改）
      *
      * @param request 编辑请求
      * @return 被编辑的记录ID
      */
     Long edit(LineEditRequest request);
+
+    /**
+     * 切换线体启用状态
+     *
+     * @param id     线体ID
+     * @param enable 目标状态：1=启用，0=禁用
+     * @return 该线体ID
+     */
+    Long updateStatus(Long id, Integer enable);
 }

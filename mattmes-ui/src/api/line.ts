@@ -90,3 +90,14 @@ export function editLine(data: LineEditRequest) {
     data
   })
 }
+
+/**
+ * 切换线体启用状态
+ */
+export function updateLineStatus(id: number, enable: number) {
+  return request<number>({
+    url: `/line/status/${id}`,
+    method: 'put',
+    params: { enable }
+  })
+}
