@@ -9,6 +9,8 @@ import com.matt.mes.common.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 线体管理Controller
  */
@@ -35,5 +37,23 @@ public class LineController {
     public Result<Long> add(@RequestBody LineAddRequest request) {
         Long id = lineService.add(request);
         return Result.success("新增线体成功", id);
+    }
+
+    /**
+     * 单条删除线体（逻辑删除）
+     */
+    @DeleteMapping("/delete/{id}")
+    public Result<Long> delete(@PathVariable Long id) {
+        Long lineId = lineService.delete(id);
+        return Result.success("删除线体成功", lineId);
+    }
+
+    /**
+     * 批量删除线体（逻辑删除）
+     */
+    @DeleteMapping("/batchDelete")
+    public Result<List<Long>> batchDelete(@RequestBody List<Long> ids) {
+        List<Long> deletedIds = lineService.batchDelete(ids);
+        return Result.success("批量删除线体成功", deletedIds);
     }
 }

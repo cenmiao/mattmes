@@ -46,6 +46,15 @@
             <el-icon><Plus /></el-icon>
             新增
           </el-button>
+          <el-button
+            type="danger"
+            @click="handleBatchDelete"
+            :disabled="selectedRows.length === 0"
+            v-permission="'line:delete'"
+          >
+            <el-icon><Delete /></el-icon>
+            批量删除
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -75,8 +84,16 @@
         <el-table-column prop="createdBy" label="创建人" width="120" />
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="120" fixed="right">
-          <template #default>
-            <span class="action-placeholder">—</span>
+          <template #default="{ row }">
+            <el-button
+              type="danger"
+              link
+              size="small"
+              @click="handleDelete(row)"
+              v-permission="'line:delete'"
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -152,9 +169,17 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { queryLineList, addLine, type LineQueryRequest, type LineResponse, type LineAddRequest } from '@/api/line'
-import { Search, Refresh, Plus } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import {
+  queryLineList,
+  addLine,
+  deleteLine,
+  batchDeleteLines,
+  type LineQueryRequest,
+  type LineResponse,
+  type LineAddRequest
+} from '@/api/line'
+import { Search, Refresh, Plus, Delete } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 
 // 查询参数
@@ -251,6 +276,57 @@ const handleReset = () => {
 // 多选变化
 const handleSelectionChange = (rows: LineResponse[]) => {
   selectedRows.value = rows
+}
+
+// 单条删除：确认框显示该线体名称
+const handleDelete = (row: LineResponse) => {
+  ElMessageBox.confirm(
+    `确认要删除线体"${row.name}"吗？`,
+    '删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      await deleteLine(row.id)
+      ElMessage.success('删除线体成功')
+      handleQuery() // 刷新列表与总数
+    } catch (error: any) {
+      ElMessage.error(error.message || '删除线体失败')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
+}
+
+// 批量删除：确认框显示将要删除的条数
+const handleBatchDelete = () => {
+  const count = selectedRows.value.length
+  if (count === 0) return
+
+  ElMessageBox.confirm(
+    `确认要删除选中的 ${count} 条线体吗？`,
+    '批量删除确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      const ids = selectedRows.value.map(row => row.id)
+      await batchDeleteLines(ids)
+      ElMessage.success(`成功删除 ${count} 条线体`)
+      selectedRows.value = []
+      handleQuery() // 刷新列表与总数
+    } catch (error: any) {
+      ElMessage.error(error.message || '批量删除线体失败')
+    }
+  }).catch(() => {
+    // 用户取消删除
+  })
 }
 
 // 打开新增弹窗
