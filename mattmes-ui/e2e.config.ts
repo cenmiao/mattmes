@@ -13,6 +13,7 @@ export default {
       // command: { executable: 'npm', args: ['run', 'dev'], log: '.e2e/logs/app.log' },
     },
   }],
+  tests: ['tests/**/*.e2e.ts', 'e2e-test/**/*.e2e.ts'],
   credentials: {
     admin: {
       username: process.env.E2E_ADMIN_USERNAME ?? 'admin',
