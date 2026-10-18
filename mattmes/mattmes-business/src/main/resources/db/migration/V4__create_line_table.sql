@@ -8,13 +8,13 @@ CREATE TABLE IF NOT EXISTS `mes_line` (
   `line_name` VARCHAR(100) NOT NULL COMMENT '线体名称',
   `description` VARCHAR(500) DEFAULT NULL COMMENT '描述',
   `enable` TINYINT NOT NULL DEFAULT 1 COMMENT '启用状态(1启用/0禁用)',
-  `created_by` VARCHAR(50) DEFAULT NULL COMMENT '创建人',
+  `created_by` VARCHAR(64) DEFAULT NULL COMMENT '创建人',
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_by` VARCHAR(50) DEFAULT NULL COMMENT '更新人',
+  `updated_by` VARCHAR(64) DEFAULT NULL COMMENT '更新人',
   `update_time` DATETIME DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除(0未删除/1已删除)',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_line_code` (`line_code`),
   KEY `idx_enable` (`enable`),
   KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='线体表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='线体表';
