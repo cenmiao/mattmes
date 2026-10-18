@@ -77,6 +77,12 @@ const routes: RouteRecordRaw[] = [
         name: 'MaterialList',
         component: () => import('@/views/material/MaterialList.vue'),
         meta: { title: '料号管理', permission: 'material:read' }
+      },
+      {
+        path: 'lines',
+        name: 'LineList',
+        component: () => import('@/views/line/LineList.vue'),
+        meta: { title: '线体管理', permission: 'line:read' }
       }
     ]
   },
