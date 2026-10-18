@@ -455,7 +455,7 @@ const handleSubmitEdit = async () => {
 // 按当前筛选条件导出 CSV：服务端一次性导出全部匹配记录（与分页无关）
 const handleExport = async () => {
   try {
-    const blob = await exportLine({
+    const { data: blob, headers } = await exportLine({
       code: queryParams.code,
       name: queryParams.name,
       enable: queryParams.enable
@@ -464,8 +464,10 @@ const handleExport = async () => {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    // 文件名与服务端 Content-Disposition 保持一致：线体数据_yyyyMMdd_HHmmss.csv
-    link.download = `线体数据_${formatExportTimestamp(new Date())}.csv`
+    // 文件名以响应头为准，保证与服务端一致；缺失时才回退到约定格式
+    link.download =
+      parseContentDispositionFileName(headers['content-disposition']) ??
+      `线体数据_${formatExportTimestamp(new Date())}.csv`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -476,7 +478,32 @@ const handleExport = async () => {
   }
 }
 
-// 生成与服务端相同格式的时间戳 yyyyMMdd_HHmmss
+// 从 Content-Disposition 解析文件名（支持 filename*=UTF-8''... 与 filename=... 形式）
+const parseContentDispositionFileName = (disposition?: string): string | null => {
+  if (!disposition) return null
+
+  const encodedMatch = /filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i.exec(disposition)
+  if (encodedMatch) {
+    const decoded = safeDecode(encodedMatch[1].trim().replace(/^"|"$/g, ''))
+    if (decoded) return decoded
+  }
+
+  const plainMatch = /filename\s*=\s*"?([^";]+)"?/i.exec(disposition)
+  if (!plainMatch) return null
+  return safeDecode(plainMatch[1].trim())
+}
+
+// 解码 URL 编码文件名；解码失败时原样返回，避免抛错中断下载
+const safeDecode = (value: string): string | null => {
+  if (!value) return null
+  try {
+    return decodeURIComponent(value.replace(/\+/g, '%20'))
+  } catch {
+    return value
+  }
+}
+
+// 生成与服务端相同格式的时间戳 yyyyMMdd_HHmmss（仅响应头缺失时兜底使用）
 const formatExportTimestamp = (now: Date) => {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`

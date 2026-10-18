@@ -52,16 +52,29 @@ describe('Line API', () => {
 
   it('exportLine 应以 blob 方式请求 GET /line/export 并透传筛选条件', async () => {
     const blob = new Blob(['\uFEFFID'], { type: 'text/csv;charset=UTF-8' })
-    vi.mocked(request).mockResolvedValue(blob)
+    const contentDisposition = 'attachment;filename=%E7%BA%BF%E4%BD%93%E6%95%B0%E6%8D%AE_20260102_030405.csv'
+    vi.mocked(request).mockResolvedValue({ data: blob, headers: { 'content-disposition': contentDisposition } })
 
     const result = await exportLine({ code: 'L1', name: '一号线', enable: 1 })
 
-    expect(result).toBe(blob)
     expect(request).toHaveBeenCalledWith({
       url: '/line/export',
       method: 'get',
       params: { code: 'L1', name: '一号线', enable: 1 },
       responseType: 'blob'
     })
+    // 响应头必须透传给调用方，供页面使用服务端文件名
+    expect(result.data).toBe(blob)
+    expect(result.headers['content-disposition']).toBe(contentDisposition)
+  })
+
+  it('exportLine 的 headers 在服务端未返回时为 undefined 也不报错', async () => {
+    const blob = new Blob(['\uFEFFID'])
+    vi.mocked(request).mockResolvedValue({ data: blob, headers: {} })
+
+    const result = await exportLine({})
+
+    expect(result.data).toBe(blob)
+    expect(result.headers['content-disposition']).toBeUndefined()
   })
 })

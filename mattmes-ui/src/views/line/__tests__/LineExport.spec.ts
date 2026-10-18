@@ -124,10 +124,14 @@ describe('LineList.vue 导出 CSV', () => {
     expect(findExportButton()).toBeUndefined()
   })
 
-  it('点击导出按当前筛选条件调用 exportLine 并触发下载，文件名与响应头一致', async () => {
-    vi.mocked(exportLine).mockResolvedValue(
-      new Blob(['\uFEFFID'], { type: 'text/csv;charset=UTF-8' })
-    )
+  it('点击导出按当前筛选条件调用 exportLine 并触发下载，文件名取自响应头', async () => {
+    vi.mocked(exportLine).mockResolvedValue({
+      data: new Blob(['\uFEFFID'], { type: 'text/csv;charset=UTF-8' }),
+      headers: {
+        'content-disposition':
+          'attachment;filename=%E7%BA%BF%E4%BD%93%E6%95%B0%E6%8D%AE_20260102_030405.csv'
+      }
+    })
 
     mountPage()
     await flush()
@@ -143,9 +147,42 @@ describe('LineList.vue 导出 CSV', () => {
     expect(createObjectURL).toHaveBeenCalledTimes(1)
 
     expect(clickedDownloads.length).toBe(1)
-    // 文件名由服务端 Content-Disposition 决定：线体数据_yyyyMMdd_HHmmss.csv
-    expect(clickedDownloads[0]).toMatch(/^线体数据_\d{8}_\d{6}\.csv$/)
+    // 文件名完全取自服务端 Content-Disposition（URL 解码后），不使用本地时钟
+    expect(clickedDownloads[0]).toBe('线体数据_20260102_030405.csv')
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
+  })
+
+  it('响应头文件名含空格（%20）时正确解码', async () => {
+    vi.mocked(exportLine).mockResolvedValue({
+      data: new Blob(['\uFEFFID']),
+      headers: {
+        'content-disposition': 'attachment;filename=%E7%BA%BF%E4%BD%93%20%E6%95%B0%E6%8D%AE_20260102_030405.csv'
+      }
+    })
+
+    mountPage()
+    await flush()
+    await findExportButton()!.trigger('click')
+    await flush()
+    await new Promise(r => setTimeout(r, 0))
+
+    expect(clickedDownloads[0]).toBe('线体 数据_20260102_030405.csv')
+  })
+
+  it('响应头缺少 Content-Disposition 时回退为约定格式文件名', async () => {
+    vi.mocked(exportLine).mockResolvedValue({
+      data: new Blob(['\uFEFFID']),
+      headers: {}
+    })
+
+    mountPage()
+    await flush()
+    await findExportButton()!.trigger('click')
+    await flush()
+    await new Promise(r => setTimeout(r, 0))
+
+    expect(clickedDownloads.length).toBe(1)
+    expect(clickedDownloads[0]).toMatch(/^线体数据_\d{8}_\d{6}\.csv$/)
   })
 
   it('导出失败时显示错误提示且不触发下载', async () => {
@@ -165,7 +202,7 @@ describe('LineList.vue 导出 CSV', () => {
   })
 
   it('导出不影响列表查询次数', async () => {
-    vi.mocked(exportLine).mockResolvedValue(new Blob(['\uFEFFID']))
+    vi.mocked(exportLine).mockResolvedValue({ data: new Blob(['\uFEFFID']), headers: {} })
 
     mountPage()
     await flush()
