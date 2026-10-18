@@ -191,6 +191,47 @@ public class LineServiceImpl implements LineService {
         return line.getId();
     }
 
+    @Override
+    public Long delete(Long id) {
+        // 1. 校验记录是否存在（已逻辑删除的记录同样视为不存在）
+        MesLine line = lineMapper.selectById(id);
+        if (line == null) {
+            throw new BusinessException(400, "线体不存在");
+        }
+
+        // 2. 执行逻辑删除（MyBatis-Plus 自动将 deleted 置为 1）
+        //    本期线体与任何实体都无关联，按 spec 明确不做关联校验
+        int rows = lineMapper.deleteById(id);
+        if (rows == 0) {
+            throw new BusinessException(500, "删除线体失败");
+        }
+
+        return id;
+    }
+
+    @Override
+    public List<Long> batchDelete(List<Long> ids) {
+        // 1. 校验ID列表
+        if (ids == null || ids.isEmpty()) {
+            throw new BusinessException(400, "删除ID列表不能为空");
+        }
+
+        // 2. 先逐条校验存在性，任一不存在即整体拒绝，避免出现部分删除
+        for (Long id : ids) {
+            if (id == null || lineMapper.selectById(id) == null) {
+                throw new BusinessException(400, "线体不存在");
+            }
+        }
+
+        // 3. 统一逻辑删除（行数与入参不一致说明校验后被并发改动，按失败处理）
+        int rows = lineMapper.deleteBatchIds(ids);
+        if (rows != ids.size()) {
+            throw new BusinessException(500, "批量删除线体失败");
+        }
+
+        return ids;
+    }
+
     /**
      * 转换为响应DTO
      */

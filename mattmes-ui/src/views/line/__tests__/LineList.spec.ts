@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { createPinia, setActivePinia } from 'pinia'
@@ -15,10 +15,25 @@ vi.mock('@/api/line', () => ({
     pageSize: 10
   }),
   addLine: vi.fn().mockResolvedValue(1),
-  updateLineStatus: vi.fn().mockResolvedValue(1)
+  updateLineStatus: vi.fn().mockResolvedValue(1),
+  deleteLine: vi.fn().mockResolvedValue(1),
+  batchDeleteLines: vi.fn().mockResolvedValue([1])
 }))
 
-import { addLine, queryLineList, updateLineStatus } from '@/api/line'
+// Mock 确认框：默认确认（resolve），可在单个用例中改为取消（reject）
+vi.mock('element-plus', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('element-plus')>()
+  return {
+    ...actual,
+    ElMessageBox: {
+      ...actual.ElMessageBox,
+      confirm: vi.fn().mockResolvedValue({ value: '', action: 'confirm' })
+    }
+  }
+})
+
+import { addLine, batchDeleteLines, deleteLine, queryLineList, updateLineStatus } from '@/api/line'
+import { ElMessageBox } from 'element-plus'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -121,6 +136,140 @@ describe('LineList.vue 新增线体', () => {
     expect(maxlengths).toContain('50')
     expect(maxlengths).toContain('100')
     expect(maxlengths).toContain('500')
+  })
+})
+
+describe('LineList.vue 删除', () => {
+  const rows = [
+    { id: 1, code: 'LINE-001', name: '一号线体', enable: 1 },
+    { id: 2, code: 'LINE-002', name: '二号线体', enable: 1 }
+  ]
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+    vi.mocked(queryLineList).mockResolvedValue({
+      list: rows,
+      total: rows.length,
+      pageNum: 1,
+      pageSize: 10
+    })
+    vi.mocked(ElMessageBox.confirm).mockResolvedValue({ value: '', action: 'confirm' } as any)
+  })
+
+  afterEach(() => {
+    wrapper?.unmount()
+    wrapper = undefined
+    document.body.innerHTML = ''
+  })
+
+  it('页面应存在批量删除按钮，未勾选任何行时为禁用态', async () => {
+    mountPage()
+    await nextTick()
+
+    const batchButton = findButton('批量删除')
+    expect(batchButton).toBeDefined()
+    expect(batchButton!.attributes('disabled')).toBeDefined()
+  })
+
+  it('每行应渲染删除按钮', async () => {
+    mountPage()
+    await nextTick()
+    await nextTick()
+
+    const deleteButtons = wrapper!.findAll('button').filter(btn => btn.text().trim() === '删除')
+    expect(deleteButtons.length).toBe(rows.length)
+  })
+
+  it('单条删除弹确认框并显示该线体名称，确认后调用 deleteLine 并刷新列表', async () => {
+    mountPage()
+    await nextTick()
+    await nextTick()
+
+    const deleteButton = wrapper!.findAll('button').find(btn => btn.text().trim() === '删除')!
+    await deleteButton.trigger('click')
+    await new Promise(r => setTimeout(r, 0))
+
+    expect(ElMessageBox.confirm).toHaveBeenCalledWith(
+      expect.stringContaining('一号线体'),
+      expect.any(String),
+      expect.any(Object)
+    )
+    expect(deleteLine).toHaveBeenCalledWith(1)
+    // 初始查询一次 + 删除后刷新一次
+    expect(queryLineList).toHaveBeenCalledTimes(2)
+  })
+
+  it('单条删除取消时不应调用 deleteLine', async () => {
+    vi.mocked(ElMessageBox.confirm).mockRejectedValue('cancel')
+    mountPage()
+    await nextTick()
+    await nextTick()
+
+    const deleteButton = wrapper!.findAll('button').find(btn => btn.text().trim() === '删除')!
+    await deleteButton.trigger('click')
+    await new Promise(r => setTimeout(r, 0))
+
+    expect(deleteLine).not.toHaveBeenCalled()
+    expect(queryLineList).toHaveBeenCalledTimes(1)
+  })
+
+  it('勾选行后批量删除按钮可用，确认框显示条数，确认后调用 batchDeleteLines 并刷新列表', async () => {
+    mountPage()
+    await nextTick()
+    await nextTick()
+
+    const vm = wrapper!.vm as any
+    vm.handleSelectionChange(rows)
+    await nextTick()
+
+    const batchButton = findButton('批量删除')!
+    expect(batchButton.attributes('disabled')).toBeUndefined()
+
+    await batchButton.trigger('click')
+    await new Promise(r => setTimeout(r, 0))
+
+    expect(ElMessageBox.confirm).toHaveBeenCalledWith(
+      expect.stringContaining(`${rows.length}`),
+      expect.any(String),
+      expect.any(Object)
+    )
+    expect(batchDeleteLines).toHaveBeenCalledWith([1, 2])
+    // 初始查询一次 + 删除后刷新一次
+    expect(queryLineList).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('LineList.vue 权限指令', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    wrapper?.unmount()
+    wrapper = undefined
+    document.body.innerHTML = ''
+  })
+
+  it('删除与批量删除按钮都挂载了 line:delete 权限指令', () => {
+    // 用一个记录指令值的桩，断言按钮声明了 line:delete
+    const seen: string[] = []
+    wrapper = mount(LineList, {
+      attachTo: document.body,
+      global: {
+        plugins: [router, ElementPlus],
+        directives: {
+          permission: {
+            mounted: (_el: HTMLElement, binding: any) => {
+              seen.push(binding.value)
+            }
+          }
+        }
+      }
+    })
+
+    expect(seen).toContain('line:delete')
   })
 })
 

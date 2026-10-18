@@ -101,3 +101,24 @@ export function updateLineStatus(id: number, enable: number) {
     params: { enable }
   })
 }
+
+/**
+ * 删除单条线体（逻辑删除）
+ */
+export function deleteLine(id: number) {
+  return request<number>({
+    url: `/line/delete/${id}`,
+    method: 'delete'
+  })
+}
+
+/**
+ * 批量删除线体（逻辑删除）
+ */
+export function batchDeleteLines(ids: number[]) {
+  return request<number[]>({
+    url: '/line/batchDelete',
+    method: 'delete',
+    data: ids
+  })
+}

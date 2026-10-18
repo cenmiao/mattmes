@@ -6,6 +6,8 @@ import com.matt.mes.business.dto.LinePageResult;
 import com.matt.mes.business.dto.LineQueryRequest;
 import com.matt.mes.business.dto.LineResponse;
 
+import java.util.List;
+
 /**
  * 线体服务接口
  */
@@ -25,7 +27,6 @@ public interface LineService {
     Long add(LineAddRequest request);
 
     /**
-    /**
      * 编辑线体（编码不可修改）
      *
      * @param request 编辑请求
@@ -41,4 +42,20 @@ public interface LineService {
      * @return 该线体ID
      */
     Long updateStatus(Long id, Integer enable);
+
+    /**
+     * 单条逻辑删除线体
+     *
+     * @param id 线体ID
+     * @return 被删除的ID
+     */
+    Long delete(Long id);
+
+    /**
+     * 批量逻辑删除线体
+     *
+     * @param ids 线体ID列表
+     * @return 被删除的ID列表
+     */
+    List<Long> batchDelete(List<Long> ids);
 }
