@@ -67,9 +67,14 @@
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="enable" label="启用状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.enable === 1 ? 'success' : 'danger'">
-              {{ row.enable === 1 ? '启用' : '禁用' }}
-            </el-tag>
+            <el-switch
+              :model-value="row.enable"
+              :active-value="1"
+              :inactive-value="0"
+              :loading="statusLoadingIds.has(row.id)"
+              @change="(value: string | number | boolean) => handleStatusChange(row, value as number)"
+              v-permission="'line:edit'"
+            />
           </template>
         </el-table-column>
         <el-table-column prop="createdBy" label="创建人" width="120" />
@@ -152,7 +157,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { queryLineList, addLine, type LineQueryRequest, type LineResponse, type LineAddRequest } from '@/api/line'
+import {
+  queryLineList,
+  addLine,
+  updateLineStatus,
+  type LineQueryRequest,
+  type LineResponse,
+  type LineAddRequest
+} from '@/api/line'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -173,6 +185,9 @@ const loading = ref(false)
 
 // 多选相关
 const selectedRows = ref<LineResponse[]>([])
+
+// 正在切换状态的线体ID集合（切换请求未返回时禁用对应开关）
+const statusLoadingIds = ref<Set<number>>(new Set())
 
 // 新增弹窗
 const addDialogVisible = ref(false)
@@ -251,6 +266,27 @@ const handleReset = () => {
 // 多选变化
 const handleSelectionChange = (rows: LineResponse[]) => {
   selectedRows.value = rows
+}
+
+// 切换启用状态：成功提示并按当前筛选条件重新查询；失败提示服务端信息并回弹
+const handleStatusChange = async (row: LineResponse, value: number) => {
+  const previous = row.enable
+  // 开关本地先不动（受控于 row.enable），请求中标记 loading 防重复点击
+  statusLoadingIds.value = new Set(statusLoadingIds.value).add(row.id)
+  try {
+    await updateLineStatus(row.id, value)
+    ElMessage.success('状态更新成功')
+    // 以服务端为准重新查询，保留当前筛选条件与分页
+    await handleQuery()
+  } catch (error: any) {
+    // 失败时始终保持切换前的值，避免界面显示与服务端不符
+    row.enable = previous
+    ElMessage.error(error?.message || '状态更新失败')
+  } finally {
+    const next = new Set(statusLoadingIds.value)
+    next.delete(row.id)
+    statusLoadingIds.value = next
+  }
 }
 
 // 打开新增弹窗

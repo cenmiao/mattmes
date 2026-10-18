@@ -36,4 +36,13 @@ public class LineController {
         Long id = lineService.add(request);
         return Result.success("新增线体成功", id);
     }
+
+    /**
+     * 切换线体启用状态
+     */
+    @PutMapping("/status/{id}")
+    public Result<Long> updateStatus(@PathVariable Long id, @RequestParam Integer enable) {
+        Long lineId = lineService.updateStatus(id, enable);
+        return Result.success("状态更新成功", lineId);
+    }
 }

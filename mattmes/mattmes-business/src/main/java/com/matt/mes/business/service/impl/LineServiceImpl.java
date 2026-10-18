@@ -128,6 +128,26 @@ public class LineServiceImpl implements LineService {
         return line.getId();
     }
 
+    @Override
+    public Long updateStatus(Long id, Integer enable) {
+        // 1. 状态值校验：只接受 1（启用）与 0（禁用）
+        if (enable == null || (enable != 0 && enable != 1)) {
+            throw new BusinessException(400, "启用状态值无效");
+        }
+
+        // 2. 校验线体是否存在
+        MesLine line = lineMapper.selectById(id);
+        if (line == null) {
+            throw new BusinessException(400, "线体不存在");
+        }
+
+        // 3. 切换状态
+        line.setEnable(enable);
+        lineMapper.updateById(line);
+
+        return line.getId();
+    }
+
     /**
      * 转换为响应DTO
      */

@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
@@ -273,6 +274,65 @@ class LineControllerTest {
         expectAddRejected(request, "启用状态值无效");
     }
 
+    // ========== 状态切换 ==========
+
+    @Test
+    @DisplayName("PUT /api/line/status/{id} 目标状态为 1 时置为启用并返回该ID")
+    void shouldEnableLine() throws Exception {
+        MesLine line = insertTestLine("LINE-STATUS-ENABLE", "待启用线体", 0, 0);
+
+        mockMvc.perform(put("/api/line/status/{id}", line.getId())
+                        .header("Authorization", AUTH)
+                        .param("enable", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(line.getId()));
+
+        org.junit.jupiter.api.Assertions.assertEquals(1, lineMapper.selectById(line.getId()).getEnable());
+    }
+
+    @Test
+    @DisplayName("PUT /api/line/status/{id} 目标状态为 0 时置为禁用并返回该ID")
+    void shouldDisableLine() throws Exception {
+        MesLine line = insertTestLine("LINE-STATUS-DISABLE", "待禁用线体", 1, 0);
+
+        mockMvc.perform(put("/api/line/status/{id}", line.getId())
+                        .header("Authorization", AUTH)
+                        .param("enable", "0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data").value(line.getId()));
+
+        org.junit.jupiter.api.Assertions.assertEquals(0, lineMapper.selectById(line.getId()).getEnable());
+    }
+
+    @Test
+    @DisplayName("PUT /api/line/status/{id} 目标状态为 0/1 之外的值返回 400")
+    void shouldRejectInvalidStatusValue() throws Exception {
+        MesLine line = insertTestLine("LINE-STATUS-BAD", "非法状态线体", 1, 0);
+
+        mockMvc.perform(put("/api/line/status/{id}", line.getId())
+                        .header("Authorization", AUTH)
+                        .param("enable", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("启用状态值无效"));
+
+        // 校验失败不得修改原状态
+        org.junit.jupiter.api.Assertions.assertEquals(1, lineMapper.selectById(line.getId()).getEnable());
+    }
+
+    @Test
+    @DisplayName("PUT /api/line/status/{id} 对不存在的 ID 返回 400")
+    void shouldRejectStatusChangeForMissingId() throws Exception {
+        mockMvc.perform(put("/api/line/status/{id}", 99999999L)
+                        .header("Authorization", AUTH)
+                        .param("enable", "0"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("线体不存在"));
+    }
+
     // ========== 辅助方法 ==========
 
     /**
@@ -291,12 +351,13 @@ class LineControllerTest {
     /**
      * 辅助方法：插入测试线体
      */
-    private void insertTestLine(String code, String name, Integer enable, Integer deleted) {
+    private MesLine insertTestLine(String code, String name, Integer enable, Integer deleted) {
         MesLine line = new MesLine();
         line.setLineCode(code);
         line.setLineName(name);
         line.setEnable(enable);
         line.setDeleted(deleted);
         lineMapper.insert(line);
+        return line;
     }
 }

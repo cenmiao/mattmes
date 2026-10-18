@@ -22,4 +22,13 @@ public interface LineService {
      * @return 新记录ID
      */
     Long add(LineAddRequest request);
+
+    /**
+     * 切换线体启用状态
+     *
+     * @param id     线体ID
+     * @param enable 目标状态：1=启用，0=禁用
+     * @return 该线体ID
+     */
+    Long updateStatus(Long id, Integer enable);
 }
