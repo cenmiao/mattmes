@@ -2,16 +2,19 @@ package com.matt.mes.business.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.matt.mes.business.dto.LineAddRequest;
 import com.matt.mes.business.dto.LinePageResult;
 import com.matt.mes.business.dto.LineQueryRequest;
 import com.matt.mes.business.dto.LineResponse;
 import com.matt.mes.business.entity.MesLine;
 import com.matt.mes.business.mapper.LineMapper;
 import com.matt.mes.business.service.LineService;
+import com.matt.mes.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -20,6 +23,18 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class LineServiceImpl implements LineService {
+
+    /** 编码允许的字符：字母、数字、下划线、中划线 */
+    private static final Pattern CODE_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
+
+    /** 编码最大长度 */
+    private static final int CODE_MAX_LENGTH = 50;
+
+    /** 名称最大长度 */
+    private static final int NAME_MAX_LENGTH = 100;
+
+    /** 描述最大长度 */
+    private static final int DESCRIPTION_MAX_LENGTH = 500;
 
     private final LineMapper lineMapper;
 
@@ -56,6 +71,61 @@ public class LineServiceImpl implements LineService {
                 .collect(Collectors.toList());
 
         return new LinePageResult<>(lineResponses, page.getTotal(), request.getPageNum(), request.getPageSize());
+    }
+
+    @Override
+    public Long add(LineAddRequest request) {
+        // 1. 编码必填（空或纯空白均不允许）
+        String code = request.getCode() == null ? null : request.getCode().trim();
+        if (code == null || code.isEmpty()) {
+            throw new BusinessException(400, "线体编码不能为空");
+        }
+
+        // 2. 名称必填（空或纯空白均不允许）
+        String name = request.getName() == null ? null : request.getName().trim();
+        if (name == null || name.isEmpty()) {
+            throw new BusinessException(400, "线体名称不能为空");
+        }
+
+        // 3. 长度校验
+        if (code.length() > CODE_MAX_LENGTH) {
+            throw new BusinessException(400, "线体编码长度不能超过50个字符");
+        }
+        if (name.length() > NAME_MAX_LENGTH) {
+            throw new BusinessException(400, "线体名称长度不能超过100个字符");
+        }
+
+        // 4. 编码格式校验
+        if (!CODE_PATTERN.matcher(code).matches()) {
+            throw new BusinessException(400, "线体编码只能包含字母、数字、下划线和中划线");
+        }
+
+        // 5. 描述长度校验
+        if (request.getDescription() != null && request.getDescription().length() > DESCRIPTION_MAX_LENGTH) {
+            throw new BusinessException(400, "描述长度不能超过500个字符");
+        }
+
+        // 6. 状态值校验
+        Integer enable = request.getEnable() == null ? 1 : request.getEnable();
+        if (enable != 0 && enable != 1) {
+            throw new BusinessException(400, "启用状态值无效");
+        }
+
+        // 7. 编码唯一性校验（连同已删除记录一起统计，避免数据库唯一键冲突）
+        Long count = lineMapper.countByCodeIncludeDeleted(code);
+        if (count != null && count > 0) {
+            throw new BusinessException(400, "线体编码已存在");
+        }
+
+        // 8. 保存
+        MesLine line = new MesLine();
+        line.setLineCode(code);
+        line.setLineName(name);
+        line.setDescription(request.getDescription());
+        line.setEnable(enable);
+        lineMapper.insert(line);
+
+        return line.getId();
     }
 
     /**

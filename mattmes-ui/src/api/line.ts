@@ -37,6 +37,16 @@ export interface LinePageResult {
 }
 
 /**
+ * 线体新增请求参数
+ */
+export interface LineAddRequest {
+  code: string
+  name: string
+  description?: string
+  enable?: number
+}
+
+/**
  * 查询线体列表
  */
 export function queryLineList(params: LineQueryRequest) {
@@ -44,5 +54,16 @@ export function queryLineList(params: LineQueryRequest) {
     url: '/line/list',
     method: 'post',
     data: params
+  })
+}
+
+/**
+ * 新增线体
+ */
+export function addLine(data: LineAddRequest) {
+  return request<number>({
+    url: '/line/add',
+    method: 'post',
+    data
   })
 }
