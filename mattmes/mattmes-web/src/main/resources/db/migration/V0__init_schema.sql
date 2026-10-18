@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `sys_role_permission` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色权限关联表';
 
 -- ------------------------------------------------------------
--- 6. 永久Token表（CONTEXT.md 中定义，当前代码尚未使用）
+-- 6. 永久Token表（docs/adr/0009-领域业务规则.md 中定义，当前代码尚未使用）
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `sys_permanent_token` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS `sys_permanent_token` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='永久Token表';
 
 -- ------------------------------------------------------------
--- 7. 登录日志表（CONTEXT.md 中定义，当前代码尚未使用）
+-- 7. 登录日志表（docs/adr/0009-领域业务规则.md 中定义，当前代码尚未使用）
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `sys_login_log` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',

@@ -73,16 +73,18 @@ Matt MES管理系统 - 离散制造执行系统,采用前后端分离架构:
 
 ## 领域知识
 
-详见 `CONTEXT.md`,核心概念:
+详见 `GLOSSARY.md`,核心概念:
 - **SN**: 序列号,产品唯一追溯键
-- **过站**: 产品经过工序站点的记录
-- **权限模型**: 扁平化 `模块:操作` 格式,无继承
+- **过站记录**: 产品经过工序站点的记录
+- **权限**: 扁平化 `模块:操作` 格式,无继承
+
+业务规则(主数据约束、SN 流转、账户策略)见 `docs/adr/0009-领域业务规则.md`。
 
 ## Agent skills
 
 ### Issue tracker
 
-问题以本地 Markdown 文件形式存放在 `.scratch/<feature>/` 目录下。适合个人项目或无远程仓库的场景。详见 `docs/agents/issue-tracker.md`。
+需求与问题以本地 Markdown 文件存放在 `.scratch/<feature>/` 下，随代码版本化。详见 `docs/agents/issue-tracker.md`。
 
 ### Triage labels
 
@@ -90,4 +92,4 @@ Matt MES管理系统 - 离散制造执行系统,采用前后端分离架构:
 
 ### Domain docs
 
-单上下文布局: `CONTEXT.md` 和 `docs/adr/` 位于仓库根目录。详见 `docs/agents/domain.md`。
+单上下文布局: `GLOSSARY.md` 和 `docs/adr/` 位于仓库根目录。详见 `docs/agents/domain.md`。
