@@ -1,5 +1,6 @@
 package com.matt.mes.controller;
 
+import com.matt.mes.business.dto.LineAddRequest;
 import com.matt.mes.business.dto.LinePageResult;
 import com.matt.mes.business.dto.LineQueryRequest;
 import com.matt.mes.business.dto.LineResponse;
@@ -25,5 +26,14 @@ public class LineController {
     public Result<LinePageResult<LineResponse>> list(@RequestBody LineQueryRequest request) {
         LinePageResult<LineResponse> result = lineService.page(request);
         return Result.success(result);
+    }
+
+    /**
+     * 新增线体
+     */
+    @PostMapping("/add")
+    public Result<Long> add(@RequestBody LineAddRequest request) {
+        Long id = lineService.add(request);
+        return Result.success("新增线体成功", id);
     }
 }
