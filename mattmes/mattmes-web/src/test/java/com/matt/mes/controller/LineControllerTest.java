@@ -6,15 +6,12 @@ import com.matt.mes.business.dto.LineEditRequest;
 import com.matt.mes.business.dto.LineQueryRequest;
 import com.matt.mes.business.entity.MesLine;
 import com.matt.mes.business.mapper.LineMapper;
-import com.matt.mes.business.service.LineService;
-import com.matt.mes.business.service.impl.LineServiceImpl;
-import com.matt.mes.common.exception.BusinessException;
-import com.matt.mes.common.result.Result;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -22,10 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,6 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * <p>通过 MockMvc 直接打 /api/line/** 接口，覆盖 Controller → Service → Mapper → 建表 SQL 的全部行为。
  * 依赖真实 MySQL，测试结束后回滚。</p>
+ *
+ * <p>{@code lineMapper} 声明为 {@link SpyBean}：默认在测试结束后重置，某个用例打的 stub
+ * 不会泄漏到其他用例；未被 stub 的方法仍走真实 DB。</p>
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -49,7 +47,7 @@ class LineControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
+    @SpyBean
     private LineMapper lineMapper;
 
     /** 永久测试 token */
@@ -275,50 +273,46 @@ class LineControllerTest {
     }
 
     @Test
-    @DisplayName("并发窗口绕过前置查重后撞上唯一键：返回 400「线体编码已存在」而非 500")
+    @DisplayName("并发窗口绕过前置查重后撞上唯一键：接口返回 400「线体编码已存在」而非 500")
     void shouldTranslateUniqueKeyConflictOnInsertToBadRequest() throws Exception {
         // 场景：两个请求同时通过前置查重，本请求在 insert 时撞上数据库唯一键。
-        // 通过 spy 让前置查重「查不到」，迫使流程走到 insert，再由 insert 抛唯一键冲突。
-        LineMapper spyMapper = spy(lineMapper);
-        doReturn(0L).when(spyMapper).countByCodeIncludeDeleted(anyString());
+        // 用 SpyBean 让前置查重「查不到」，迫使流程走到 insert，再由 insert 抛唯一键冲突；
+        // 请求仍走 mockMvc 全链路，异常由生产代码 GlobalExceptionHandler 映射，测试不代劳。
+        doReturn(0L).when(lineMapper).countByCodeIncludeDeleted("LINE-RACE-001");
         doThrow(new DuplicateKeyException("Duplicate entry for key 'uk_line_code'"))
-                .when(spyMapper).insert(any(MesLine.class));
-
-        LineService spyService = new LineServiceImpl(spyMapper);
+                .when(lineMapper).insert(any(MesLine.class));
 
         LineAddRequest request = new LineAddRequest();
         request.setCode("LINE-RACE-001");
         request.setName("并发撞键线体");
 
-        // 直接调用控制器层，异常按生产路径经 GlobalExceptionHandler 归一化为 400
-        Result<Long> result;
-        try {
-            result = new LineController(spyService).add(request);
-        } catch (BusinessException e) {
-            result = Result.error(e.getCode(), e.getMessage());
-        }
-
-        org.junit.jupiter.api.Assertions.assertEquals(400, result.getCode());
-        org.junit.jupiter.api.Assertions.assertEquals("线体编码已存在", result.getMessage());
+        mockMvc.perform(post("/api/line/add")
+                        .header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("线体编码已存在"));
     }
 
     @Test
-    @DisplayName("insert 抛出唯一键之外的异常不被吞掉，仍原样抛出")
+    @DisplayName("insert 抛出唯一键之外的异常不被吞掉，仍按系统异常（500）返回")
     void shouldNotSwallowNonDuplicateKeyExceptionOnInsert() throws Exception {
-        LineMapper spyMapper = spy(lineMapper);
-        doReturn(0L).when(spyMapper).countByCodeIncludeDeleted(anyString());
-        doThrow(new IllegalStateException("db down")).when(spyMapper).insert(any(MesLine.class));
-
-        LineService spyService = new LineServiceImpl(spyMapper);
+        doReturn(0L).when(lineMapper).countByCodeIncludeDeleted("LINE-RACE-002");
+        doThrow(new IllegalStateException("db down")).when(lineMapper).insert(any(MesLine.class));
 
         LineAddRequest request = new LineAddRequest();
         request.setCode("LINE-RACE-002");
         request.setName("其他异常线体");
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-                IllegalStateException.class,
-                () -> spyService.add(request),
-                "非 DuplicateKeyException 必须原样抛出，不能被兜底吞成业务错误");
+        // 非 DuplicateKeyException 必须落到兜底的系统异常分支，不能被误译成「线体编码已存在」
+        mockMvc.perform(post("/api/line/add")
+                        .header("Authorization", AUTH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(500))
+                .andExpect(jsonPath("$.message").value("系统异常，请稍后重试"));
     }
 
     // ========== 状态值校验 ==========
