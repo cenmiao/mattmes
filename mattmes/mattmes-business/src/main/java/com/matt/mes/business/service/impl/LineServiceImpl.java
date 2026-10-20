@@ -13,6 +13,7 @@ import com.matt.mes.business.service.LineService;
 import com.matt.mes.common.exception.BusinessException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -143,7 +144,13 @@ public class LineServiceImpl implements LineService {
         line.setLineName(name);
         line.setDescription(request.getDescription());
         line.setEnable(enable);
-        lineMapper.insert(line);
+        try {
+            lineMapper.insert(line);
+        } catch (DuplicateKeyException e) {
+            // 并发窗口：两个请求同时通过第 7 步查重，后写入的一方在此撞上数据库唯一键。
+            // 与前置查重保持同一错误码与文案，避免泄露 500 系统异常。
+            throw new BusinessException(400, "线体编码已存在");
+        }
 
         return line.getId();
     }
