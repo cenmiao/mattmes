@@ -6,16 +6,26 @@ import com.matt.mes.business.dto.LineEditRequest;
 import com.matt.mes.business.dto.LineQueryRequest;
 import com.matt.mes.business.entity.MesLine;
 import com.matt.mes.business.mapper.LineMapper;
+import com.matt.mes.business.service.LineService;
+import com.matt.mes.business.service.impl.LineServiceImpl;
+import com.matt.mes.common.exception.BusinessException;
+import com.matt.mes.common.result.Result;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -262,6 +272,53 @@ class LineControllerTest {
         request.setName("复用已删除编码");
 
         expectAddRejected(request, "线体编码已存在");
+    }
+
+    @Test
+    @DisplayName("并发窗口绕过前置查重后撞上唯一键：返回 400「线体编码已存在」而非 500")
+    void shouldTranslateUniqueKeyConflictOnInsertToBadRequest() throws Exception {
+        // 场景：两个请求同时通过前置查重，本请求在 insert 时撞上数据库唯一键。
+        // 通过 spy 让前置查重「查不到」，迫使流程走到 insert，再由 insert 抛唯一键冲突。
+        LineMapper spyMapper = spy(lineMapper);
+        doReturn(0L).when(spyMapper).countByCodeIncludeDeleted(anyString());
+        doThrow(new DuplicateKeyException("Duplicate entry for key 'uk_line_code'"))
+                .when(spyMapper).insert(any(MesLine.class));
+
+        LineService spyService = new LineServiceImpl(spyMapper);
+
+        LineAddRequest request = new LineAddRequest();
+        request.setCode("LINE-RACE-001");
+        request.setName("并发撞键线体");
+
+        // 直接调用控制器层，异常按生产路径经 GlobalExceptionHandler 归一化为 400
+        Result<Long> result;
+        try {
+            result = new LineController(spyService).add(request);
+        } catch (BusinessException e) {
+            result = Result.error(e.getCode(), e.getMessage());
+        }
+
+        org.junit.jupiter.api.Assertions.assertEquals(400, result.getCode());
+        org.junit.jupiter.api.Assertions.assertEquals("线体编码已存在", result.getMessage());
+    }
+
+    @Test
+    @DisplayName("insert 抛出唯一键之外的异常不被吞掉，仍原样抛出")
+    void shouldNotSwallowNonDuplicateKeyExceptionOnInsert() throws Exception {
+        LineMapper spyMapper = spy(lineMapper);
+        doReturn(0L).when(spyMapper).countByCodeIncludeDeleted(anyString());
+        doThrow(new IllegalStateException("db down")).when(spyMapper).insert(any(MesLine.class));
+
+        LineService spyService = new LineServiceImpl(spyMapper);
+
+        LineAddRequest request = new LineAddRequest();
+        request.setCode("LINE-RACE-002");
+        request.setName("其他异常线体");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> spyService.add(request),
+                "非 DuplicateKeyException 必须原样抛出，不能被兜底吞成业务错误");
     }
 
     // ========== 状态值校验 ==========
