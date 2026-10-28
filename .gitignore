@@ -26,3 +26,12 @@ Thumbs.db
 
 .codegraph/
 .node_modules/
+node_modules/
+.e2e/
+.agents/.runtime/
+.agents/.backups/
+.agents/config/orchestration.local.json
+.opencode/node_modules/
+orchestration/
+
+package*
