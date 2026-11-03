@@ -24,15 +24,25 @@ Thumbs.db
 .claude/worktrees/
 .claude/sessions/
 
-.codegraph/
 .node_modules/
-node_modules/
-.e2e/
 .agents/.runtime/
 .agents/.backups/
-.agents/config/orchestration.local.json
 .opencode/node_modules/
 orchestration/
 
 package*
 logs/
+
+# >>> orca-agents project artifacts (managed)
+node_modules/
+.opencode/
+.codegraph/
+.agents/
+.artifacts/
+reviews/
+.e2e/
+e2e-test/
+.worktreeinclude
+e2e.config.ts
+opencode.json
+# <<< orca-agents project artifacts
